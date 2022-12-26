@@ -1,0 +1,47 @@
+[package]
+name = "ch32v20x-hal"
+version = "0.1.0"
+edition = "2021"
+authors = ["Andelf <andelf@gmail.com>"]
+categories = ["embedded", "hardware-support", "no-std"]
+description = "HAL for the CH32V20x family of microcontrollers"
+keywords = ["risc-v", "wch", "ch32", "hal"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/ch32-rs/ch32v20x-hal"
+documentation = "https://docs.rs/ch32v20x-hal"
+readme = "README.md"
+
+[dependencies]
+ch32v2 = { version = "0.1.5", features = ["ch32v20x", "critical-section"] }
+# provide implementation for critical-section
+riscv = { version = "0.10.0", features = ["critical-section-single-hart"] }
+riscv-rt = "0.10"
+nb = "1.0"
+fugit = "0.3.6"
+fugit-timer = "0.1.3"
+
+[dependencies.embedded-hal]
+features = ["unproven"]
+version = "0.2.3"
+
+[dev-dependencies.time]
+version = "0.3"
+default-features = false
+features = ["macros"]
+
+[features]
+default = ["ch32v203"]
+device-selected = []
+
+ch32v203 = ["device-selected"] # svd-feature
+ch32v203rb = ["ch32v203"]      # HSE=32M, PLLXTPRE has /4 and /8, ETH-PHY
+ch32v208 = ["device-selected"]
+
+[dev-dependencies]
+riscv = { version = "0.10.0", features = ["critical-section-single-hart"] }
+riscv-rt = "0.10"
+panic-halt = "0.2.0"
+
+[[example]]
+name = "blinky"
+required-features = ["ch32v203"]
