@@ -32,6 +32,9 @@ pub mod gpio;
 #[cfg(feature = "device-selected")]
 pub mod serial;
 
+//#[cfg(feature = "device-selected")]
+// pub mod timer;
+
 pub mod state {
     /// Indicates that a peripheral is enabled
     pub struct Enabled;

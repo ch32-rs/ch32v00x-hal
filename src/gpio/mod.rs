@@ -9,7 +9,7 @@ use crate::rcc::{Enable, APB2};
 pub use embedded_hal::digital::v2::PinState;
 
 mod convert;
-mod hal_v2;
+mod hal_02;
 mod partially_erased;
 pub use partially_erased::{PEPin, PartiallyErasedPin};
 

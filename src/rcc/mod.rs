@@ -225,6 +225,31 @@ impl PLLMUL {
             PLLMUL::Mul6_5 => pll / 2 * 13,
         }
     }
+
+    #[inline]
+    fn all_modes() -> &'static [Self] {
+        &[
+            #[cfg(not(feature = "d8c"))]
+            PLLMUL::Mul2,
+            PLLMUL::Mul3,
+            PLLMUL::Mul4,
+            PLLMUL::Mul5,
+            PLLMUL::Mul6,
+            PLLMUL::Mul7,
+            PLLMUL::Mul8,
+            PLLMUL::Mul9,
+            PLLMUL::Mul10,
+            PLLMUL::Mul11,
+            PLLMUL::Mul12,
+            PLLMUL::Mul13,
+            PLLMUL::Mul14,
+            PLLMUL::Mul15,
+            PLLMUL::Mul16,
+            PLLMUL::Mul18,
+            #[cfg(feature = "d8c")]
+            PLLMUL::Mul6_5,
+        ]
+    }
 }
 
 /// Microcontroller clock output
@@ -419,7 +444,7 @@ impl CFGR {
 
     /// Sets the PLL multiplication factor for the main PLL.
     pub fn pllmul(mut self, pllmul: PLLMUL) -> Self {
-        self.pllmul = self.pllmul;
+        self.pllmul = pllmul;
         self
     }
 
@@ -430,6 +455,7 @@ impl CFGR {
     }
 
     /// Output clock calculation
+    #[inline]
     fn calculate_clocks(&self) -> (Clocks, InternalRCCConfig) {
         let mut config = InternalRCCConfig::default();
 
@@ -522,6 +548,7 @@ impl CFGR {
         (clocks, config)
     }
 
+    #[inline]
     fn pll_configure(&mut self) {
         // handle PLLXTPRE PLLSRC PLLMUL
         let base_clk = match self.hse.as_ref() {
@@ -541,22 +568,41 @@ impl CFGR {
             return;
         }
 
+        self.use_pll = true;
+
         // check if PLLXTPRE and PLLMUL allow to obtain the requested Sysclk,
         // so that we don't have to calculate them
         if (sysclk as u64) == self.pllmul.mul(base_clk as u64) {
             return;
         }
 
+        if self.hse.is_some() {
+            if (sysclk as u64) == self.pllmul.mul(base_clk as u64 / 2) {
+                self.pllxtpre = true;
+                return;
+            }
+        }
+
         #[cfg(any(feature = "ch32v203rb", feature = "ch32v208"))]
         unimplemented!();
 
-        if (sysclk as u64) == self.pllmul.mul(base_clk as u64 / 2) {
-            self.pllxtpre = true;
-            return;
+        for &pllmul in PLLMUL::all_modes() {
+            if (sysclk as u64) == pllmul.mul(base_clk as u64) {
+                self.pllmul = pllmul;
+                return;
+            }
+
+            if self.hse.is_some() {
+                if (sysclk as u64) == pllmul.mul(base_clk as u64 / 2) {
+                    self.pllmul = pllmul;
+                    self.pllxtpre = true;
+                    return;
+                }
+            }
         }
 
-        // now calculate pllmul
-        // unimplemented!()
+        // now calculate nearest pllmul
+        unimplemented!() // TODO
     }
 
     /// Configures the default clock settings.
@@ -576,7 +622,7 @@ impl CFGR {
     /// HSE except when HSE is provided. When HSE is provided, HSE is used
     /// wherever it is possible.
     pub fn freeze(mut self) -> Clocks {
-        let flash = unsafe { &(*FLASH::ptr()) };
+        let _flash = unsafe { &(*FLASH::ptr()) };
         let rcc = unsafe { &(*RCC::ptr()) };
         let pwr = unsafe { &(*PWR::ptr()) };
 
@@ -593,7 +639,7 @@ impl CFGR {
         // Configure HSE if provided
         if let Some(hse) = self.hse {
             // Configure the HSE mode
-            match self.hse.as_ref().unwrap().mode {
+            match hse.mode {
                 HSEClockMode::Bypass => rcc.ctlr.modify(|_, w| w.hsebyp().set_bit()),
                 HSEClockMode::Oscillator => rcc.ctlr.modify(|_, w| w.hsebyp().clear_bit()),
             }
@@ -627,9 +673,9 @@ impl CFGR {
         pwr.ctlr.modify(|_, w| w.dbp().set_bit());
 
         // Configure LSE if provided
-        if self.lse.is_some() {
+        if let Some(lse) = self.lse.as_ref() {
             // Configure the LSE mode
-            match self.lse.as_ref().unwrap().mode {
+            match lse.mode {
                 LSEClockMode::Bypass => rcc.bdctlr.modify(|_, w| w.lsebyp().set_bit()),
                 LSEClockMode::Oscillator => rcc.bdctlr.modify(|_, w| w.lsebyp().clear_bit()),
             }
@@ -646,8 +692,7 @@ impl CFGR {
 
         // other PLL here
 
-        rcc.cfgr0
-            .modify(|_, w| unsafe { w.mco().variant(self.mco.into()) });
+        rcc.cfgr0.modify(|_, w| w.mco().variant(self.mco.into()));
 
         // FLASH access clock frequency cannot be more than 72 MHz.
         // if clocks.sysclk.to_Hz() * 2 < 72_000_000 {

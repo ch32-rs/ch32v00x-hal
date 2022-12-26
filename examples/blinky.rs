@@ -2,6 +2,7 @@
 #![no_main]
 
 use hal::gpio::GpioExt;
+use hal::rcc::HSEClock;
 use riscv_rt::entry;
 // provide implementation for critical-section
 use panic_halt as _;
@@ -16,23 +17,29 @@ fn main() -> ! {
     let peripherals = pac::Peripherals::take().unwrap();
     let rcc = peripherals.RCC.constrain();
 
-    let _clocks = rcc.cfgr.sysclk(8.MHz()).freeze();
+    let clocks = rcc
+        .cfgr
+        .sysclk(8.MHz())
+        // .set_defaults()
+        // .hse(HSEClock::new(8.MHz(), hal::rcc::HSEClockMode::Oscillator))
+        .freeze();
+
+    //assert_eq!(clocks.hclk().to_MHz(), 80);
 
     // nanoCH32V203
-    let gpioa = peripherals.GPIOA.split();
-    let mut led = gpioa.pa15.into_push_pull_output();
+    //let gpioa = peripherals.GPIOA.split();
+    //let mut led = gpioa.pa15.into_push_pull_output();
 
-    // let gpiob = peripherals.GPIOB;
+    let gpiob = peripherals.GPIOB.split();
+    let mut led = gpiob.pb8.into_push_pull_output();
 
     // HSI 8MHz
     // 4 opcodes to do a nop sleep here
-    let cycle = 8_000_000 / 4;
+    let cycle = 8_000_000;
     loop {
-        for _ in 0..cycle {
-            unsafe {
-                riscv::asm::nop();
-            }
-        }
+       // unsafe {
+       //     riscv::asm::delay(cycle);
+        //}
 
         led.toggle();
     }

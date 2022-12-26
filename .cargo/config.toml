@@ -1,8 +1,14 @@
 [build]
 target = "riscv32imac-unknown-none-elf"
 
+[target.'cfg(all(target_arch = "riscv32", target_os = "none"))']
+# runner = "riscv64-unknown-elf-gdb -q -x openocd.gdb"
+runner = "riscv-none-embed-gdb -q -x openocd.gdb"
+# runner = "gdb -q -x openocd.gdb"
+
 [target.riscv32imac-unknown-none-elf]
 rustflags = [
   "-C", "link-arg=-Tmemory.x",
   "-C", "link-arg=-Tlink.x",
 ]
+

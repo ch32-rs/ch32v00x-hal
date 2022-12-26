@@ -12,7 +12,12 @@ documentation = "https://docs.rs/ch32v20x-hal"
 readme = "README.md"
 
 [dependencies]
-ch32v2 = { version = "0.1.5", features = ["ch32v20x", "critical-section"] }
+ch32v2 = { path = "../ch32-rs-nightlies/ch32v2", version = "0.1.5", features = [
+    "ch32v20x",
+    "critical-section",
+] }
+# ch32v2 = { version = "0.1.5", features = ["ch32v20x", "critical-section"] }
+
 # provide implementation for critical-section
 riscv = { version = "0.10.0", features = ["critical-section-single-hart"] }
 riscv-rt = "0.10"
