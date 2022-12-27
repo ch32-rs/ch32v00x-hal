@@ -24,11 +24,11 @@ fn main() -> ! {
         // .hse(HSEClock::new(8.MHz(), hal::rcc::HSEClockMode::Oscillator))
         .freeze();
 
-    // nanoCH32V203
+    // nanoCH32V203: 8MHz HSE, blue LED
     //let gpioa = peripherals.GPIOA.split();
     //let mut led = gpioa.pa15.into_push_pull_output();
 
-    // FlappyBoard
+    // FlappyBoard: No HSE, ice-blue LED
     let gpiob = peripherals.GPIOB.split();
     let mut led = gpiob.pb8.into_push_pull_output();
 
