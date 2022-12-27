@@ -20,8 +20,7 @@ fn main() -> ! {
 
     let clocks = rcc
         .cfgr
-        .sysclk(16.MHz())
-        .pllmul(PLLMUL::Mul4)
+        .sysclk(48.MHz())
         // .set_defaults()
         // .hse(HSEClock::new(8.MHz(), hal::rcc::HSEClockMode::Oscillator))
         .freeze();

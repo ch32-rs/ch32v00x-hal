@@ -7,7 +7,7 @@ mod enable;
 
 use fugit::{HertzU32 as Hertz, RateExtU32};
 
-use crate::pac::{rcc, FLASH, PWR, RCC};
+use crate::pac::{rcc, EXTEND, FLASH, PWR, RCC};
 
 /// Typical output frequency of the HSI oscillator.
 const HSI_FREQUENCY: Hertz = Hertz::from_raw(8_000_000);
@@ -621,10 +621,26 @@ impl CFGR {
     /// The implementation makes the following choice: HSI is always chosen over
     /// HSE except when HSE is provided. When HSE is provided, HSE is used
     /// wherever it is possible.
+    //#define SYSCLK_FREQ_HSE    HSE_VALUE
+    //#define SYSCLK_FREQ_48MHz_HSE  48000000
+    //#define SYSCLK_FREQ_56MHz_HSE  56000000
+    //#define SYSCLK_FREQ_72MHz_HSE  72000000
+    //#define SYSCLK_FREQ_96MHz_HSE  96000000
+    //#define SYSCLK_FREQ_120MHz_HSE  120000000
+    //#define SYSCLK_FREQ_144MHz_HSE  144000000
+    //#define SYSCLK_FREQ_HSI    HSI_VALUE
+    //#define SYSCLK_FREQ_48MHz_HSI  48000000
+    //#define SYSCLK_FREQ_56MHz_HSI  56000000
+    //#define SYSCLK_FREQ_72MHz_HSI  72000000
+    //#define SYSCLK_FREQ_96MHz_HSI  96000000
+    //#define SYSCLK_FREQ_120MHz_HSI  120000000
+    //#define SYSCLK_FREQ_144MHz_HSI  144000000
     pub fn freeze(mut self) -> Clocks {
         let _flash = unsafe { &(*FLASH::ptr()) };
         let rcc = unsafe { &(*RCC::ptr()) };
         let pwr = unsafe { &(*PWR::ptr()) };
+        // NOTE: This is only documented in English version of RM.
+        let extend = unsafe { &(*EXTEND::ptr()) };
 
         self.pll_configure();
 
@@ -649,6 +665,11 @@ impl CFGR {
         }
 
         if self.use_pll {
+            if self.hse.is_none() {
+                // HSI is used as PLL source
+                extend.extend_ctr.modify(|_, w| w.pll_hsi_pre().set_bit());
+            }
+
             // Disable PLL, PLLMUL, PLLXTPRE, PLLSRC can only be written when PLL is off.
             rcc.ctlr.modify(|_, w| w.pllon().clear_bit());
 
