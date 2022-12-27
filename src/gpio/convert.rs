@@ -112,8 +112,8 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
     /// ensure they use this properly.
     #[inline(always)]
     pub(super) fn mode<M: PinMode>(&mut self) {
-        let offset = (4 * N) % 0x1f;
-        let cfgr = M::CNFR << 2 | M::MODER;
+        let offset = (4 * N) % 32;
+        let cfgr = (M::CNFR << 2) | M::MODER;
         unsafe {
             if N >= 8 {
                 (*Gpio::<P>::ptr())
@@ -124,7 +124,6 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
                     .cfglr
                     .modify(|r, w| w.bits((r.bits() & !(0b1111 << offset)) | (cfgr << offset)));
             }
-            // (*Gpio::<P>::ptr());
             if let Some(odr) = M::ODR {
                 (*Gpio::<P>::ptr())
                     .outdr

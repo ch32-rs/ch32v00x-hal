@@ -3,6 +3,7 @@
 
 use hal::gpio::GpioExt;
 use hal::rcc::HSEClock;
+use hal::rcc::PLLMUL;
 use riscv_rt::entry;
 // provide implementation for critical-section
 use panic_halt as _;
@@ -19,12 +20,13 @@ fn main() -> ! {
 
     let clocks = rcc
         .cfgr
-        .sysclk(8.MHz())
+        .sysclk(16.MHz())
+        .pllmul(PLLMUL::Mul4)
         // .set_defaults()
         // .hse(HSEClock::new(8.MHz(), hal::rcc::HSEClockMode::Oscillator))
         .freeze();
 
-    //assert_eq!(clocks.hclk().to_MHz(), 80);
+    //assert_eq!(clocks.hclk().to_MHz(), 16);
 
     // nanoCH32V203
     //let gpioa = peripherals.GPIOA.split();
@@ -35,12 +37,9 @@ fn main() -> ! {
 
     // HSI 8MHz
     // 4 opcodes to do a nop sleep here
-    let cycle = 8_000_000;
+    let cycle = 8_000_000 / 10;
     loop {
-       // unsafe {
-       //     riscv::asm::delay(cycle);
-        //}
-
+        unsafe { riscv::asm::delay(cycle) }
         led.toggle();
     }
 }
