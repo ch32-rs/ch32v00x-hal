@@ -35,7 +35,7 @@ pub trait PinExt {
 }
 
 /// Some alternate mode (type state)
-pub struct Alternate<const A: u8, Otype = PushPull>(PhantomData<Otype>);
+pub struct Alternate<Otype = PushPull>(PhantomData<Otype>);
 
 /// Input mode (type state)
 pub struct Input<MODE = Floating> {
@@ -65,7 +65,7 @@ pub struct PushPull;
 /// Analog mode (type state)
 pub struct Analog;
 
-pub type Debugger = Alternate<0, PushPull>;
+pub type Debugger = Alternate<PushPull>;
 
 /// Slew rates available for Output and relevant AlternateMode Pins
 pub enum Speed {
@@ -150,7 +150,7 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, Output<MODE>> {
 
 // NOTE: No internal_pull_up and internal_pull_down for Output<OpenDrain>
 
-impl<const P: char, const N: u8, const A: u8> Pin<P, N, Alternate<A, PushPull>> {
+impl<const P: char, const N: u8> Pin<P, N, Alternate<PushPull>> {
     /// Set pin speed
     pub fn set_speed(self, speed: Speed) -> Self {
         let offset = 4 * { N & 0b111 };
@@ -173,9 +173,9 @@ impl<const P: char, const N: u8, const A: u8> Pin<P, N, Alternate<A, PushPull>> 
     }
 }
 
-impl<const P: char, const N: u8, const A: u8> Pin<P, N, Alternate<A, PushPull>> {
+impl<const P: char, const N: u8> Pin<P, N, Alternate<PushPull>> {
     /// Turns pin alternate configuration pin into open drain
-    pub fn set_open_drain(self) -> Pin<P, N, Alternate<A, OpenDrain>> {
+    pub fn set_open_drain(self) -> Pin<P, N, Alternate<OpenDrain>> {
         // CNFy
         let offset = 4 * { N & 0b111 } + 2;
 

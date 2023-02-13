@@ -13,9 +13,26 @@ cargo build --release --example blinky
 wchisp flash ./target/riscv32imac-unknown-none-elf/release/examples/blinky
 ```
 
+```console
+> cargo build --release --example serial
+
+> wchisp flash ./target/riscv32imac-unknown-none-elf/release/examples/serial
+
+> # serial output:
+Booting OK!
+RCC: Clocks { sysclk: Rate { raw: 144000000 }, hclk: Rate { raw: 144000000 }, pclk1: Rate { raw: 144000000 }, pclk2: Rate { raw: 144000000 }, pllclk: Some(Rate { raw: 144000000 }), hse: None, lse: None, lsi: None }
+MCU Info
+misa:      40901105 XLEN32 ACIMUX
+mvendorid: None
+marchid:   dc68d882 WCH-V4B
+mimpid:    dc688001
+mhartid:   00000000
+Hello, world!
+```
+
 ## NOTES on Part Number
 
-```
+```text
 CH32V203G6U6
         ||||
         |||`-> Temperature range

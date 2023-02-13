@@ -2,22 +2,9 @@
 
 use super::*;
 
-/// Const assert hack
-struct Assert<const L: u8, const R: u8>;
-
-impl<const L: u8, const R: u8> Assert<L, R> {
-    pub const LESS: u8 = R - L - 1;
-}
-
-// TODO: From trait impls
-
 impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
-    pub(super) fn set_alternate<const A: u8>(&mut self) {
-        #[allow(path_statements, clippy::no_effect)]
-        {
-            Assert::<A, 16>::LESS;
-        }
-        let offset = 2 * { N };
+    pub(super) fn set_alternate(&mut self) {
+        let offset = (4 * N) % 32;
         let cfgr = 0b1011; // Alternative PushPull, Output 50MHz
         unsafe {
             if N >= 8 {
@@ -33,14 +20,14 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
     }
 
     /// Configures the pin to operate alternate mode
-    pub fn into_alternate<const A: u8>(mut self) -> Pin<P, N, Alternate<A, PushPull>> {
-        self.set_alternate::<A>();
+    pub fn into_alternate(mut self) -> Pin<P, N, Alternate<PushPull>> {
+        self.set_alternate();
         Pin::new()
     }
 
     /// Configures the pin to operate in alternate open drain mode
-    pub fn into_alternate_open_drain<const A: u8>(self) -> Pin<P, N, Alternate<A, OpenDrain>> {
-        self.into_alternate::<A>().set_open_drain()
+    pub fn into_alternate_open_drain(self) -> Pin<P, N, Alternate<OpenDrain>> {
+        self.into_alternate().set_open_drain()
     }
 
     /// Configures the pin to operate as a floating input pin

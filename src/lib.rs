@@ -1,14 +1,12 @@
-//! HAL for the CH32V2xx family of microcontrollers
+//! HAL for the CH32V20x family of microcontrollers
 
 #![cfg_attr(not(test), no_std)]
 #![allow(non_camel_case_types)]
 
 #[cfg(not(feature = "device-selected"))]
 compile_error!(
-    "This crate requires one of the following device features enabled:
-        ch32v203
-        ch32v208
-                "
+    "This crate requires device feature to be enabled, \
+     e.g. `ch32v20x-hal = { version = \"0.1.0\", features = [\"ch32v203g8\"] }`"
 );
 
 pub(crate) use embedded_hal as hal;
@@ -32,7 +30,10 @@ pub mod gpio;
 #[cfg(feature = "device-selected")]
 pub mod serial;
 
-//#[cfg(feature = "device-selected")]
+#[cfg(feature = "device-selected")]
+pub mod signature;
+
+// #[cfg(feature = "device-selected")]
 // pub mod timer;
 
 pub mod state {
