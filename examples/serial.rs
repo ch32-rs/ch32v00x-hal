@@ -22,8 +22,8 @@ fn main() -> ! {
 
     let clocks = rcc
         .config
-        .sysclk_72m_via_hsi()
-        // .sysclk_144m_via_hsi()
+        //.sysclk_72m_via_hsi()
+        .sysclk_144m_via_hsi()
         .freeze();
 
     // nanoCH32V203: 8MHz HSE, blue LED
@@ -91,12 +91,12 @@ fn main() -> ! {
     write!(
         &mut serial,
         "{}{}{}-{}{}{}\r\n",
-        ((marchid >> 26) & 0x1F + 64) as u8 as char,
-        ((marchid >> 21) & 0x1F + 64) as u8 as char,
-        ((marchid >> 16) & 0x1F + 64) as u8 as char,
-        ((marchid >> 10) & 0x1F + 64) as u8 as char,
+        (((marchid >> 26) & 0x1F) + 64) as u8 as char,
+        (((marchid >> 21) & 0x1F) + 64) as u8 as char,
+        (((marchid >> 16) & 0x1F) + 64) as u8 as char,
+        (((marchid >> 10) & 0x1F) + 64) as u8 as char,
         ((((marchid >> 5) & 0x1F) as u8) + b'0') as char,
-        (marchid & 0x1F + 64) as u8 as char,
+        ((marchid & 0x1F) + 64) as u8 as char,
     )
     .unwrap();
 
