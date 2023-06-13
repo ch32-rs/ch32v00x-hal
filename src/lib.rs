@@ -1,18 +1,19 @@
-//! HAL for the CH32V20x family of microcontrollers
+//! HAL for the CH32V003 microcontroller
 
-#![cfg_attr(not(test), no_std)]
+#![no_std]
+// #![cfg_attr(not(test), no_std)]
 #![allow(non_camel_case_types)]
 
 #[cfg(not(feature = "device-selected"))]
 compile_error!(
     "This crate requires device feature to be enabled, \
-     e.g. `ch32v20x-hal = { version = \"0.1.0\", features = [\"ch32v203g8\"] }`"
+     e.g. `ch32v00x-hal = { version = \"0.1.0\", features = [\"ch32v003\"] }`"
 );
 
 pub(crate) use embedded_hal as hal;
 
-#[cfg(feature = "ch32v203")]
-pub use ch32v2::ch32v20x as pac;
+#[cfg(feature = "ch32v003")]
+pub use ch32v0::ch32v003 as pac;
 
 // Enable use of interrupt macro
 #[cfg(feature = "rt")]
@@ -27,11 +28,11 @@ pub mod rcc;
 #[cfg(feature = "device-selected")]
 pub mod gpio;
 
-#[cfg(feature = "device-selected")]
-pub mod serial;
+// #[cfg(feature = "device-selected")]
+// pub mod serial;
 
-#[cfg(feature = "device-selected")]
-pub mod signature;
+// #[cfg(feature = "device-selected")]
+// pub mod signature;
 
 // #[cfg(feature = "device-selected")]
 // pub mod timer;

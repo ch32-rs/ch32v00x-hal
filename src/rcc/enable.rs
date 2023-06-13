@@ -61,37 +61,23 @@ macro_rules! bus {
 }
 
 bus! {
-    // CRC => (AHB, crcen, crcrst)
-    // DMA1 => (AHB, dma1en, dma1rst),
-    // DMA2 => (AHB, dma2en, dma2rst),
+    // 3.4.6
+    // SRAM => (AHB, sramen, sramrst), wheres this gone?
+    DMA1 => (AHB, dma1en, ),
 
+    // 3.4.7
     AFIO => (APB2, afioen, afiorst), // 0
     GPIOA => (APB2, iopaen, ioparst),
-    GPIOB => (APB2, iopben, iopbrst),
     GPIOC => (APB2, iopcen, iopcrst),
     GPIOD => (APB2, iopden, iopdrst),
-    GPIOE => (APB2, iopeen, ioperst),
     ADC1 => (APB2, adc1en, adc1rst),
-    ADC2 => (APB2, adc2en, adc2rst),
     TIM1 => (APB2, tim1en, tim1rst),
     SPI1 => (APB2, spi1en, spi1rst),
     USART1 => (APB2, usart1en, usart1rst),
 
-    TIM2 => (APB1, tim2en, tim2rst), // 0
-    TIM3 => (APB1, tim3en, tim3rst),
-    TIM4 => (APB1, tim4en, tim4rst),
+    // 3.4.8
+    TIM2 => (APB1, tim2en, ), // 0
     WWDG => (APB1, wwdgen, wwdgrst),
-    SPI2 => (APB1, spi2en, spi2rst),
-    USART2 => (APB1, usart2en, usart2rst),
-    USART3 => (APB1, usart3en, usart3rst),
     I2C1 => (APB1, i2c1en, i2c1rst),
-    I2C2 => (APB1, i2c2en, i2c2rst),
-    CAN1 => (APB1, can1en, can1rst),
-
-    BKP => (APB1, bkpen, bkprst),
     PWR => (APB1, pwren, pwrrst),
-
-    USB => (APB1, usbden, usbdrst),
-
-
 }

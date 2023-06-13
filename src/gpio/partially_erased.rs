@@ -12,12 +12,12 @@ pub struct PartiallyErasedPin<const P: char, MODE> {
 }
 
 impl<const P: char, MODE> PartiallyErasedPin<P, MODE> {
-    pub(crate) fn new(i: u8) -> Self {
-        Self {
-            i,
-            _mode: PhantomData,
-        }
-    }
+    // pub(crate) fn new(i: u8) -> Self {
+    //     Self {
+    //         i,
+    //         _mode: PhantomData,
+    //     }
+    // }
 }
 
 impl<const P: char, MODE> fmt::Debug for PartiallyErasedPin<P, MODE> {

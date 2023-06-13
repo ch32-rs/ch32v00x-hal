@@ -1,22 +1,18 @@
 [package]
-name = "ch32v20x-hal"
+name = "ch32v00x-hal"
 version = "0.1.0"
 edition = "2021"
-authors = ["Andelf <andelf@gmail.com>"]
+authors = ["Andelf <andelf@gmail.com>", "Noxim <aaro.peramaa@gmail.com>"]
 categories = ["embedded", "hardware-support", "no-std"]
-description = "HAL for the CH32V20x family of microcontrollers"
+description = "HAL for the CH32V00x family of microcontrollers"
 keywords = ["risc-v", "wch", "ch32", "hal"]
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/ch32-rs/ch32v20x-hal"
-documentation = "https://docs.rs/ch32v20x-hal"
+repository = "https://github.com/ch32-rs/ch32v00x-hal"
+documentation = "https://docs.rs/ch32v00x-hal"
 readme = "README.md"
 
 [dependencies]
-ch32v2 = { path = "../ch32-rs-nightlies/ch32v2", version = "0.1.6", features = [
-    "ch32v20x",
-    "critical-section",
-] }
-# ch32v2 = { version = "0.1.5", features = ["ch32v20x", "critical-section"] }
+ch32v0 = { version = "0.1.6", features = ["ch32v003", "critical-section"] }
 
 # provide implementation for critical-section
 riscv = { version = "0.10.0", features = ["critical-section-single-hart"] }
@@ -34,46 +30,26 @@ default-features = false
 features = ["macros"]
 
 [features]
-default = ["ch32v203"]
+default = ["ch32v003"]
 device-selected = []
 
-ch32v203 = [] # svd-feature
-ch32v208 = []
-
-#
-ch32v203f6 = [] # 32K Flash 10K SRAM
-ch32v203g6 = ["device-selected", "ch32v203"] # 32K 10K
-ch32v203k6 = [] # 32K 10K
-ch32v203c6 = [] # 32K 10K
-ch32v203f8 = [] # 64K 20K
-ch32v203g8 = [] # 64K 20K
-ch32v203k8 = [] # 64K 20K
-ch32v203c8 = [] # 64K 20K
-ch32v203rb = [
-    "device-selected",
-    "ch32v203",
-] # 128K 64K, HSE must be 32M, PLLXTPRE has /4 and /8, ETH-PHY added
-ch32v208gb = [] # 128K 64K
-ch32v208cb = [] # 128K 64K
-ch32v208rb = [] # 128K 64K
-ch32v208wb = [] # 128K 64K
+ch32v003 = ["device-selected"]
 
 [dev-dependencies]
 riscv = { version = "0.10.0", features = ["critical-section-single-hart"] }
 riscv-rt = "0.11"
 panic-halt = "0.2.0"
 
-[[example]]
-name = "blinky"
-# change this to the device you want to run the example on
-required-features = ["device-selected"]
-
-[[example]]
-name = "serial"
-# change this to the device you want to run the example on
-required-features = ["device-selected"]
+# [[example]]
+# name = "blinky"
+# # change this to the device you want to run the example on
+# required-features = ["device-selected"]
 
 [profile.release]
 strip = false
 lto = true
 opt-level = "z" # Optimize for size.
+
+[patch.crates-io]
+# TODO: Merge this to riscv-rt
+riscv-rt = { git = "https://github.com/9names/riscv-rt", branch = "rv32e" }

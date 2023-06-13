@@ -7,15 +7,9 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
         let offset = (4 * N) % 32;
         let cfgr = 0b1011; // Alternative PushPull, Output 50MHz
         unsafe {
-            if N >= 8 {
-                (*Gpio::<P>::ptr())
-                    .cfghr
-                    .modify(|r, w| w.bits((r.bits() & !(0b1111 << offset)) | (cfgr << offset)));
-            } else {
-                (*Gpio::<P>::ptr())
-                    .cfglr
-                    .modify(|r, w| w.bits((r.bits() & !(0b1111 << offset)) | (cfgr << offset)));
-            }
+            (*Gpio::<P>::ptr())
+                .cfglr
+                .modify(|r, w| w.bits((r.bits() & !(0b1111 << offset)) | (cfgr << offset)));
         }
     }
 
@@ -102,15 +96,9 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
         let offset = (4 * N) % 32;
         let cfgr = (M::CNFR << 2) | M::MODER;
         unsafe {
-            if N >= 8 {
-                (*Gpio::<P>::ptr())
-                    .cfghr
-                    .modify(|r, w| w.bits((r.bits() & !(0b1111 << offset)) | (cfgr << offset)));
-            } else {
-                (*Gpio::<P>::ptr())
-                    .cfglr
-                    .modify(|r, w| w.bits((r.bits() & !(0b1111 << offset)) | (cfgr << offset)));
-            }
+            (*Gpio::<P>::ptr())
+                .cfglr
+                .modify(|r, w| w.bits((r.bits() & !(0b1111 << offset)) | (cfgr << offset)));
             if let Some(odr) = M::ODR {
                 (*Gpio::<P>::ptr())
                     .outdr

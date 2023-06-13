@@ -3,9 +3,6 @@
 use core::fmt;
 use core::marker::PhantomData;
 
-use crate::pac::{AFIO, EXTI};
-use crate::rcc::{Enable, APB2};
-
 pub use embedded_hal::digital::v2::PinState;
 
 mod convert;
@@ -65,8 +62,6 @@ pub struct PushPull;
 /// Analog mode (type state)
 pub struct Analog;
 
-pub type Debugger = Alternate<PushPull>;
-
 /// Slew rates available for Output and relevant AlternateMode Pins
 pub enum Speed {
     /// Slew at 10Mhz
@@ -90,11 +85,12 @@ pub trait OutputSpeed<CR> {
 /// Generic pin type
 ///
 /// - `MODE` is one of the pin modes (see [Modes](crate::gpio#modes) section).
-/// - `P` is port name: `A` for GPIOA, `B` for GPIOB, etc.
-/// - `N` is pin number: from `0` to `15`.
+/// - `P` is port name: `A` for GPIOA, `C` for GPIOC, etc.
+/// - `N` is pin number: from `0` to `7`.
 pub struct Pin<const P: char, const N: u8, MODE = Input<Floating>> {
     _mode: PhantomData<MODE>,
 }
+
 impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
     const fn new() -> Self {
         Self { _mode: PhantomData }
@@ -130,19 +126,11 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, Output<MODE>> {
     pub fn set_speed(self, speed: Speed) -> Self {
         let offset = 4 * { N & 0b111 };
 
-        if N >= 8 {
-            unsafe {
-                (*Gpio::<P>::ptr()).cfghr.modify(|r, w| {
-                    w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset))
-                })
-            };
-        } else {
-            unsafe {
-                (*Gpio::<P>::ptr()).cfglr.modify(|r, w| {
-                    w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset))
-                })
-            };
-        }
+        unsafe {
+            (*Gpio::<P>::ptr()).cfglr.modify(|r, w| {
+                w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset))
+            })
+        };
 
         self
     }
@@ -155,19 +143,11 @@ impl<const P: char, const N: u8> Pin<P, N, Alternate<PushPull>> {
     pub fn set_speed(self, speed: Speed) -> Self {
         let offset = 4 * { N & 0b111 };
 
-        if N >= 8 {
-            unsafe {
-                (*Gpio::<P>::ptr()).cfghr.modify(|r, w| {
-                    w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset))
-                })
-            };
-        } else {
-            unsafe {
-                (*Gpio::<P>::ptr()).cfglr.modify(|r, w| {
-                    w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset))
-                })
-            };
-        }
+        unsafe {
+            (*Gpio::<P>::ptr()).cfglr.modify(|r, w| {
+                w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset))
+            })
+        };
 
         self
     }
@@ -179,19 +159,11 @@ impl<const P: char, const N: u8> Pin<P, N, Alternate<PushPull>> {
         // CNFy
         let offset = 4 * { N & 0b111 } + 2;
 
-        if N >= 8 {
-            unsafe {
-                (*Gpio::<P>::ptr())
-                    .cfghr
-                    .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (0b10 << offset)))
-            };
-        } else {
-            unsafe {
-                (*Gpio::<P>::ptr())
-                    .cfglr
-                    .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (0b10 << offset)))
-            };
-        }
+        unsafe {
+            (*Gpio::<P>::ptr())
+                .cfglr
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (0b10 << offset)))
+        };
 
         Pin::new()
     }
@@ -273,11 +245,7 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, Output<MODE>> {
 
     #[inline(always)]
     pub fn toggle(&mut self) {
-        if self.is_set_low() {
-            self.set_high()
-        } else {
-            self.set_low()
-        }
+        self.set_state(!self.get_state())
     }
 }
 
@@ -365,43 +333,35 @@ gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA5: (pa5, 5),
     PA6: (pa6, 6),
     PA7: (pa7, 7),
-    PA8: (pa8, 8),
-    PA9: (pa9, 9),
-    PA10: (pa10, 10),
-    PA11: (pa11, 11),
-    PA12: (pa12, 12),
-    PA13: (pa13, 13, super::Debugger), // SWDIO, PullUp VeryHigh speed
-    PA14: (pa14, 14, super::Debugger), // SWCLK, PullDown
-    PA15: (pa15, 15),
 ]);
 
-gpio!(GPIOB, gpiob, PB, 'B', PBn, [
-    PB0: (pb0, 0),
-    PB1: (pb1, 1),
-    PB2: (pb2, 2),
-    PB3: (pb3, 3),
-    PB4: (pb4, 4),
-    PB5: (pb5, 5),
-    PB6: (pb6, 6),
-    PB7: (pb7, 7),
-    PB8: (pb8, 8),
-    PB9: (pb9, 9),
-    PB10: (pb10, 10),
-    PB11: (pb11, 11),
-    PB12: (pb12, 12),
-    PB13: (pb13, 13),
-    PB14: (pb14, 14),
-    PB15: (pb15, 15),
+gpio!(GPIOC, gpioc, PC, 'C', PCn, [
+    PC0: (pc0, 0),
+    PC1: (pc1, 1),
+    PC2: (pc2, 2),
+    PC3: (pc3, 3),
+    PC4: (pc4, 4),
+    PC5: (pc5, 5),
+    PC6: (pc6, 6),
+    PC7: (pc7, 7),
 ]);
 
-// TODO: GPIOC, GPIOD
+gpio!(GPIOD, gpiod, PD, 'D', PDn, [
+    PD0: (pd0, 0),
+    PD1: (pd1, 1),
+    PD2: (pd2, 2),
+    PD3: (pd3, 3),
+    PD4: (pd4, 4),
+    PD5: (pd5, 5),
+    PD6: (pd6, 6),
+    PD7: (pd7, 7),
+]);
 
 struct Gpio<const P: char>;
 impl<const P: char> Gpio<P> {
     const fn ptr() -> *const crate::pac::gpioa::RegisterBlock {
         match P {
             'A' => crate::pac::GPIOA::ptr(),
-            'B' => crate::pac::GPIOB::ptr() as _,
             'C' => crate::pac::GPIOC::ptr() as _,
             'D' => crate::pac::GPIOD::ptr() as _,
             _ => crate::pac::GPIOA::ptr(),
