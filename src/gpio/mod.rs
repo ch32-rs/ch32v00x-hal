@@ -20,7 +20,7 @@ pub trait GpioExt {
     type Parts;
 
     /// Splits the GPIO block into independent pins and registers
-    fn split(self) -> Self::Parts;
+    fn split(self, rcc: &mut crate::rcc::Rcc) -> Self::Parts;
 }
 
 pub trait PinExt {
@@ -276,13 +276,13 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, Input<MODE>> {
 }
 
 macro_rules! gpio {
-    ($GPIOX:ident, $gpiox:ident, $PEPin:ident, $port_id:expr, $PXn:ident, [
+    ($GPIOX:ident, $gpiox:ident, $PEPin:ident, $port_id:expr, $PXn:ident, $enable:ident, $reset:ident, [
         $($PXi:ident: ($pxi:ident, $i:expr $(, $MODE:ty)?),)+
     ]) => {
         /// GPIO
         pub mod $gpiox {
             use crate::pac::$GPIOX;
-            use crate::rcc::{Enable, Reset};
+            use crate::rcc::{Rcc, Enable, Reset};
             use super::{
                 Floating, Input,
             };
@@ -298,11 +298,10 @@ macro_rules! gpio {
             impl super::GpioExt for $GPIOX {
                 type Parts = Parts;
 
-                fn split(self) -> Parts {
-                    unsafe {
-                        <$GPIOX>::enable_unchecked();
-                        <$GPIOX>::reset_unchecked();
-                    }
+                fn split(self, rcc: &mut Rcc) -> Parts {
+                    // Power on peripheral and reset it
+                    $GPIOX :: enable(&mut rcc.apb2);
+                    $GPIOX :: reset(&mut rcc.apb2);
 
                     Parts {
                         $(
@@ -324,7 +323,7 @@ macro_rules! gpio {
     }
 }
 
-gpio!(GPIOA, gpioa, PA, 'A', PAn, [
+gpio!(GPIOA, gpioa, PA, 'A', PAn, iopaen, ioparst, [
     PA0: (pa0, 0),
     PA1: (pa1, 1),
     PA2: (pa2, 2),
@@ -335,7 +334,7 @@ gpio!(GPIOA, gpioa, PA, 'A', PAn, [
     PA7: (pa7, 7),
 ]);
 
-gpio!(GPIOC, gpioc, PC, 'C', PCn, [
+gpio!(GPIOC, gpioc, PC, 'C', PCn, iopcen, iopcrst, [
     PC0: (pc0, 0),
     PC1: (pc1, 1),
     PC2: (pc2, 2),
@@ -346,7 +345,7 @@ gpio!(GPIOC, gpioc, PC, 'C', PCn, [
     PC7: (pc7, 7),
 ]);
 
-gpio!(GPIOD, gpiod, PD, 'D', PDn, [
+gpio!(GPIOD, gpiod, PD, 'D', PDn, iopden, iopdrst, [
     PD0: (pd0, 0),
     PD1: (pd1, 1),
     PD2: (pd2, 2),

@@ -53,13 +53,14 @@ macro_rules! bus_struct {
                     Self { _0: () }
                 }
                 
-                #[allow(unused)]
+                /// Enable register
                 pub(crate) fn enr(&self) -> &rcc::$EN {
                     // NOTE(unsafe) this proxy grants exclusive access to this register
                     unsafe { &(*RCC::ptr()).$en }
                 }
 
                 $(
+                    /// Reset register
                     pub(crate) fn rstr(&self) -> &rcc::$RST {
                         // NOTE(unsafe) this proxy grants exclusive access to this register
                         unsafe { &(*RCC::ptr()).$rst }

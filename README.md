@@ -12,7 +12,7 @@ This is a WIP implementation of the embedded-hal traits for the CH32V0 family of
 - [ ] WWDG: Window Watchdog
 - [ ] FPIC: Programmable Fast Interrupt Controller
 - [x] GPIO: General Purpose Input/Output
-- [x] AFIO: Alternate Function Input/Output
+- [ ] AFIO: Alternate Function Input/Output
 - [ ] DMA: Direct Memory Access control
 - [ ] ADC: Analog to Digital Converter
 - [ ] ADTM: Advanced control Timer (TIM1)
