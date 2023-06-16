@@ -40,8 +40,8 @@ pub mod delay;
 // #[cfg(feature = "device-selected")]
 // pub mod signature;
 
-// #[cfg(feature = "device-selected")]
-// pub mod timer;
+#[cfg(feature = "device-selected")]
+pub mod timer;
 
 pub mod state {
     /// Indicates that a peripheral is enabled

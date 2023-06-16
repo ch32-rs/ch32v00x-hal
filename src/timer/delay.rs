@@ -1,58 +1,41 @@
 //! Delays
-use super::Timer;
-use crate::{pac::SYSTICK, timer::SystickExt};
+use crate::{pac::SYSTICK};
 use core::ops::{Deref, DerefMut};
 use fugit::{MicrosDurationU32, TimerDurationU32};
 
+const SYSTICK_RANGE: u32 = 0x8000_0000;
+
 /// Timer as a delay provider (SYSTICKick by default)
-pub struct SysDelay(Timer<SYSTICK>);
-
-impl Deref for SysDelay {
-    type Target = Timer<SYSTICK>;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for SysDelay {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
+pub struct SysDelay {
+    pub systick: SYSTICK,
+    scale: u32,
 }
 
 impl SysDelay {
-    /// Releases the timer resource
-    pub fn release(self) -> Timer<SYSTICK> {
-        self.0
+    pub fn new(systick: SYSTICK, scale: u32) -> Self {
+        systick.ctlr.write(|w| w.stre().set_bit().stclk().set_bit().ste().set_bit());
+        unsafe {systick.cmpr.write(|w| w.cmp().bits(SYSTICK_RANGE - 1))};
+        SysDelay {
+            systick, scale
+        }
     }
-}
 
-impl Timer<SYSTICK> {
-    pub fn delay(self) -> SysDelay {
-        SysDelay(self)
-    }
-}
+    pub fn delay(&mut self, us: u32) {
+        // The SysTick Reload Value register supports values between 1 and 0x7FFFFFFF.
+        // Here less than maximum is used so we have some play if there's a long running interrupt.
+        const MAX_RVR: u32 = SYSTICK_RANGE / 2 - 1;
 
-impl SysDelay {
-    pub fn delay(&mut self, us: MicrosDurationU32) {
-        // The SYSTICKick Reload Value register supports values between 1 and 0x00FFFFFF.
-        const MAX_RVR: u32 = 0x00FF_FFFF;
+        let mut total_rvr = us * self.scale;
 
-        let mut total_rvr = us.ticks() * (self.clk.raw() / 1_000_000);
 
         while total_rvr != 0 {
             let current_rvr = total_rvr.min(MAX_RVR);
 
-            self.tim.set_reload(current_rvr);
-            self.tim.clear_current();
-            self.tim.enable_counter();
-
+            let start_rvr = self.systick.cnt.read().cnt().bits();
             // Update the tracking variable while we are waiting...
             total_rvr -= current_rvr;
-
-            while !self.tim.has_wrapped() {}
-
-            self.tim.disable_counter();
+            // Use the wrapping substraction and the modulo to deal with the systick wrapping around
+            while (self.systick.cnt.read().cnt().bits().wrapping_sub(start_rvr)) % SYSTICK_RANGE < current_rvr {}
         }
     }
 }
