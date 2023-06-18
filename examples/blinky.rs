@@ -3,9 +3,9 @@
 
 use panic_halt as _;
 use riscv_rt::entry;
-use riscv;
 use ch32v00x_hal::{gpio::GpioExt, prelude::*, timer::delay::SysDelay};
 use embedded_hal::digital::v2::ToggleableOutputPin;
+use embedded_hal::blocking::delay::DelayMs;
 
 #[entry]
 fn main() -> ! {
@@ -17,12 +17,13 @@ fn main() -> ! {
     let gpioc = p.GPIOC.split(&mut rcc);
 
     let clocks = rcc.config.freeze();
+    let mut delay = SysDelay::new(p.SYSTICK, &clocks);
+
     let mut pc1 = gpioc.pc1.into_push_pull_output();
 
-    let mut delay = SysDelay::new(p.SYSTICK, 24);
     loop {
         // Toggle pin 1
         pc1.toggle();
-        delay.delay(500_000);
+        delay.delay_ms(500_u16);
     }
 }
