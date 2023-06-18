@@ -1,58 +1,86 @@
 //! Delays
-use super::Timer;
-use crate::{pac::SYSTICK, timer::SystickExt};
-use core::ops::{Deref, DerefMut};
-use fugit::{MicrosDurationU32, TimerDurationU32};
+use crate::pac::SYSTICK;
+use crate::rcc::Clocks;
 
-/// Timer as a delay provider (SYSTICKick by default)
-pub struct SysDelay(Timer<SYSTICK>);
-
-impl Deref for SysDelay {
-    type Target = Timer<SYSTICK>;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for SysDelay {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
+/// A delay using the systick timer
+///
+/// Timing mostly doesn't vary from interrupts
+pub struct SysDelay {
+    systick: SYSTICK,
+    scale: u32,
 }
 
 impl SysDelay {
-    /// Releases the timer resource
-    pub fn release(self) -> Timer<SYSTICK> {
-        self.0
-    }
-}
-
-impl Timer<SYSTICK> {
-    pub fn delay(self) -> SysDelay {
-        SysDelay(self)
-    }
-}
-
-impl SysDelay {
-    pub fn delay(&mut self, us: MicrosDurationU32) {
-        // The SYSTICKick Reload Value register supports values between 1 and 0x00FFFFFF.
-        const MAX_RVR: u32 = 0x00FF_FFFF;
-
-        let mut total_rvr = us.ticks() * (self.clk.raw() / 1_000_000);
-
-        while total_rvr != 0 {
-            let current_rvr = total_rvr.min(MAX_RVR);
-
-            self.tim.set_reload(current_rvr);
-            self.tim.clear_current();
-            self.tim.enable_counter();
-
-            // Update the tracking variable while we are waiting...
-            total_rvr -= current_rvr;
-
-            while !self.tim.has_wrapped() {}
-
-            self.tim.disable_counter();
+    pub fn new(systick: SYSTICK, clocks: &Clocks) -> Self {
+        systick.ctlr.write(|w| w.stclk().set_bit().ste().set_bit());
+        let scale = clocks.hclk().to_MHz() as u32;
+        SysDelay {
+            systick,
+            scale
         }
+    }
+}
+
+impl embedded_hal_alpha::delay::DelayUs for SysDelay {
+    fn delay_us(&mut self, mut us: u32) {
+        // Wait at most for half the potential length (to avoid issues when interrupts occur and the timer continues)
+        // To avoid having to calculate and/or store the maximum depending on the scale, just pick the worst case.
+        // This is around 45 seconds, so this shouldn't be an issue
+        const MAX_US: u32 = 8000_0000u32 / 48;
+        // Scale the us inside the loop, to avoid overflow scenarios
+        while us != 0 {
+            let current_us = us.min(MAX_US);
+            let current_rvr = current_us * self.scale;
+
+            let start_rvr = self.systick.cnt.read().cnt().bits();
+            // Update the tracking variable while we are waiting...
+            us -= current_us;
+            // Use the wrapping substraction to deal with the systick wrapping around
+            while (self.systick.cnt.read().cnt().bits().wrapping_sub(start_rvr)) < current_rvr {}
+        }
+    }
+}
+
+impl embedded_hal::blocking::delay::DelayUs<u32> for SysDelay {
+    fn delay_us(&mut self, us: u32) {
+        embedded_hal_alpha::delay::DelayUs::delay_us(self, us as _);
+    }
+}
+
+impl embedded_hal::blocking::delay::DelayUs<u16> for SysDelay {
+    fn delay_us(&mut self, us: u16) {
+        embedded_hal_alpha::delay::DelayUs::delay_us(self, us as _);
+    }
+}
+
+impl embedded_hal::blocking::delay::DelayUs<u8> for SysDelay {
+    fn delay_us(&mut self, us: u8) {
+        embedded_hal_alpha::delay::DelayUs::delay_us(self, us as _);
+    }
+}
+
+impl embedded_hal::blocking::delay::DelayMs<u32> for SysDelay {
+    // Multiplying ms so we can call delay_us directly might overflow, so implement an outer loop
+    fn delay_ms(&mut self, mut ms: u32) {
+        const MAX_MS: u32 = 0x0010_0000;
+        while ms != 0 {
+            let current_ms = if ms <= MAX_MS { ms } else { MAX_MS };
+            embedded_hal::blocking::delay::DelayUs::delay_us(self, current_ms as u32 * 1_000);
+            ms -= current_ms;
+        }
+    }
+}
+
+impl embedded_hal::blocking::delay::DelayMs<u16> for SysDelay {
+    fn delay_ms(&mut self, ms: u16) {
+        // Call delay_us directly, so we don't have to use the additional
+        // delay loop the u32 variant uses
+        embedded_hal::blocking::delay::DelayUs::delay_us(self, ms as u32 * 1_000);
+    }
+}
+
+impl embedded_hal::blocking::delay::DelayMs<u8> for SysDelay {
+    fn delay_ms(&mut self, ms: u8) {
+        self.delay_ms(ms as u16);
     }
 }
