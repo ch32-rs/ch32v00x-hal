@@ -8,9 +8,6 @@ use crate::rcc::Clocks;
 pub struct SysDelay {
     systick: SYSTICK,
     scale: u32,
-    // The SysTick counter has a width of 32 bits and will be configured to run freely.
-    // We'll only wait half the theoretically possible time to have some leeway in case of interrupts.
-    max_us: u32
 }
 
 impl SysDelay {
@@ -19,17 +16,20 @@ impl SysDelay {
         let scale = clocks.hclk().to_MHz() as u32;
         SysDelay {
             systick,
-            scale,
-            max_us: (8000_0000u32 / scale) - 1,
+            scale
         }
     }
 }
 
 impl embedded_hal_alpha::delay::DelayUs for SysDelay {
     fn delay_us(&mut self, mut us: u32) {
+        // Wait at most for half the potential length (to avoid issues when interrupts occur and the timer continues)
+        // To avoid having to calculate and/or store the maximum depending on the scale, just pick the worst case.
+        // This is around 45 seconds, so this shouldn't be an issue
+        const MAX_US: u32 = 8000_0000u32 / 48;
         // Scale the us inside the loop, to avoid overflow scenarios
         while us != 0 {
-            let current_us = us.min(self.max_us);
+            let current_us = us.min(MAX_US);
             let current_rvr = current_us * self.scale;
 
             let start_rvr = self.systick.cnt.read().cnt().bits();
