@@ -7,3 +7,6 @@ pub use crate::hal::prelude::*;
 pub use crate::rcc::RccExt as _;
 pub use crate::pfic::PficExt as _;
 
+pub use crate::serial::UsartExt as _;
+
+pub use crate::gpio::GpioExt as _;

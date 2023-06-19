@@ -1,9 +1,9 @@
 #![no_std]
 #![no_main]
 
+use ch32v00x_hal::{prelude::*, timer::delay::SysDelay};
 use panic_halt as _;
 use riscv_rt::entry;
-use ch32v00x_hal::{gpio::GpioExt, prelude::*, timer::delay::SysDelay};
 use embedded_hal::digital::v2::ToggleableOutputPin;
 use embedded_hal::blocking::delay::DelayMs;
 

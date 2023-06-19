@@ -1,10 +1,10 @@
 //! Reset and clock control.
 
-use core::ops::{Div};
+use core::ops::Div;
 
 mod enable;
 
-use ch32v0::{Reg, ch32v003::rcc::cfgr0::CFGR0_SPEC, Readable, Writable};
+use ch32v0::{ch32v003::rcc::cfgr0::CFGR0_SPEC, Readable, Reg, Writable};
 use fugit::{HertzU32 as Hertz, RateExtU32};
 
 use crate::pac::{rcc, RCC};
@@ -52,7 +52,7 @@ macro_rules! bus_struct {
                 pub(crate) fn new() -> Self {
                     Self { _0: () }
                 }
-                
+
                 /// Enable register
                 pub(crate) fn enr(&self) -> &rcc::$EN {
                     // NOTE(unsafe) this proxy grants exclusive access to this register
@@ -237,21 +237,32 @@ impl Config {
         let mut clocks = Clocks::default();
 
         // Helper function to write to a register and block until condition is met
-        fn block<REG>(reg: &Reg<REG>, 
-            set: impl Fn(&mut REG::Writer) -> &mut REG::Writer, 
-            get: impl Fn(REG::Reader) -> bool)
-        where REG: Readable + Writable {
+        fn block<REG>(
+            reg: &Reg<REG>,
+            set: impl Fn(&mut REG::Writer) -> &mut REG::Writer,
+            get: impl Fn(REG::Reader) -> bool,
+        ) where
+            REG: Readable + Writable,
+        {
             reg.modify(|_, w| set(w));
             while !get(reg.read()) {}
         }
 
         // Helper to set clock source blockingly
         fn block_clock(cfgr0: &Reg<CFGR0_SPEC>, src: ClockSrc) {
-            block(cfgr0, |w| w.sw().variant(src as u8), |r| r.sws().bits() == src as u8)
+            block(
+                cfgr0,
+                |w| w.sw().variant(src as u8),
+                |r| r.sws().bits() == src as u8,
+            )
         }
 
         // Ensure HSI is on and switch to it
-        block(&rcc.ctlr, |w| w.hsion().set_bit(), |r| r.hsirdy().bit_is_set());
+        block(
+            &rcc.ctlr,
+            |w| w.hsion().set_bit(),
+            |r| r.hsirdy().bit_is_set(),
+        );
         block_clock(&rcc.cfgr0, ClockSrc::Hsi);
 
         // Configure HSE if provided
@@ -261,15 +272,18 @@ impl Config {
                 HSESrc::Bypass => rcc.ctlr.modify(|_, w| w.hsebyp().set_bit()),
             }
             // Start HSE, wait for it to stabilize
-            block(&rcc.ctlr, |w| w.hseon().set_bit(), |r| r.hserdy().bit_is_set());
+            block(
+                &rcc.ctlr,
+                |w| w.hseon().set_bit(),
+                |r| r.hserdy().bit_is_set(),
+            );
             clocks.hse = Some(hse.frequency);
         }
 
         // Configure HCLK
         // TODO: ADCPRE
-        rcc.cfgr0.modify(|_, w| w
-                .hpre()
-                .variant(self.ahb_pre as u8));
+        rcc.cfgr0
+            .modify(|_, w| w.hpre().variant(self.ahb_pre as u8));
 
         // Enable PWR domain
         rcc.apb1pcenr.modify(|_, w| w.pwren().set_bit());
@@ -304,7 +318,11 @@ impl Config {
                 clocks.pllclk = Some(clocks.sysclk);
 
                 // Enable PLL
-                block(&rcc.ctlr, |w| w.pllon().set_bit(), |r| r.pllrdy().bit_is_set());
+                block(
+                    &rcc.ctlr,
+                    |w| w.pllon().set_bit(),
+                    |r| r.pllrdy().bit_is_set(),
+                );
                 block_clock(&rcc.cfgr0, ClockSrc::Pll);
             }
         }
@@ -314,7 +332,11 @@ impl Config {
 
         // Configure low speed internal RC (128khz)
         if self.enable_lsi {
-            block(&rcc.rstsckr, |w| w.lsion().set_bit(), |r| r.lsirdy().bit_is_set());
+            block(
+                &rcc.rstsckr,
+                |w| w.lsion().set_bit(),
+                |r| r.lsirdy().bit_is_set(),
+            );
         }
 
         // Enable clock output
@@ -408,6 +430,18 @@ where
 }
 
 impl BusClock for AHB {
+    fn clock(clocks: &Clocks) -> Hertz {
+        clocks.hclk
+    }
+}
+
+impl BusClock for APB1 {
+    fn clock(clocks: &Clocks) -> Hertz {
+        clocks.hclk
+    }
+}
+
+impl BusClock for APB2 {
     fn clock(clocks: &Clocks) -> Hertz {
         clocks.hclk
     }

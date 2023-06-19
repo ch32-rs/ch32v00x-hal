@@ -127,9 +127,9 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, Output<MODE>> {
         let offset = 4 * { N & 0b111 };
 
         unsafe {
-            (*Gpio::<P>::ptr()).cfglr.modify(|r, w| {
-                w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset))
-            })
+            (*Gpio::<P>::ptr())
+                .cfglr
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset)))
         };
 
         self
@@ -144,9 +144,9 @@ impl<const P: char, const N: u8> Pin<P, N, Alternate<PushPull>> {
         let offset = 4 * { N & 0b111 };
 
         unsafe {
-            (*Gpio::<P>::ptr()).cfglr.modify(|r, w| {
-                w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset))
-            })
+            (*Gpio::<P>::ptr())
+                .cfglr
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset)))
         };
 
         self
@@ -367,3 +367,27 @@ impl<const P: char> Gpio<P> {
         }
     }
 }
+use crate::serial;
+impl serial::Ck<0> for gpiod::PD4<Alternate<PushPull>> {}
+impl serial::Tx<0> for gpiod::PD5<Alternate<PushPull>> {}
+impl serial::Rx<0> for gpiod::PD6<Input<Floating>> {}
+impl serial::Cts<0> for gpiod::PD3<Input<Floating>> {}
+impl serial::Rts<0> for gpioc::PC2<Alternate<PushPull>> {}
+
+impl serial::Ck<1> for gpiod::PD7<Alternate<PushPull>> {}
+impl serial::Tx<1> for gpiod::PD0<Alternate<PushPull>> {}
+impl serial::Rx<1> for gpiod::PD1<Input<Floating>> {}
+impl serial::Cts<1> for gpioc::PC3<Input<Floating>> {}
+impl serial::Rts<1> for gpioc::PC2<Alternate<PushPull>> {}
+
+impl serial::Ck<2> for gpiod::PD7<Alternate<PushPull>> {}
+impl serial::Tx<2> for gpiod::PD6<Alternate<PushPull>> {}
+impl serial::Rx<2> for gpiod::PD5<Input<Floating>> {}
+impl serial::Cts<2> for gpioc::PC6<Input<Floating>> {}
+impl serial::Rts<2> for gpioc::PC7<Alternate<PushPull>> {}
+
+impl serial::Ck<3> for gpioc::PC5<Alternate<PushPull>> {}
+impl serial::Tx<3> for gpioc::PC0<Alternate<PushPull>> {}
+impl serial::Rx<3> for gpioc::PC1<Input<Floating>> {}
+impl serial::Cts<3> for gpioc::PC6<Input<Floating>> {}
+impl serial::Rts<3> for gpioc::PC7<Alternate<PushPull>> {}

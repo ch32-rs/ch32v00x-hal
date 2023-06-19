@@ -17,10 +17,10 @@ This is a WIP implementation of the embedded-hal traits for the CH32V0 family of
 - [ ] ADC: Analog to Digital Converter
 - [ ] ADTM: Advanced control Timer (TIM1)
 - [ ] GPTM: General Purpose Timer (TIM2)
-- [ ] USART: Universal Synchronous Asynchronous Receiver Transmitter
+- [x] USART: Universal Synchronous Asynchronous Receiver Transmitter
 - [ ] I2C: Inter-intergrated Circuit interface
 - [ ] SPI: Serial Peripheral Interface
-- [ ] ESIG: Electronic Signature
+- [x] ESIG: Electronic Signature
 - [ ] FLASH: Flash memory and user option bytes
 - [ ] EXTEND: Extended configuration
 - [ ] DBG: Debug support

@@ -34,11 +34,11 @@ pub mod gpio;
 #[cfg(feature = "device-selected")]
 pub mod delay;
 
-// #[cfg(feature = "device-selected")]
-// pub mod serial;
+#[cfg(feature = "device-selected")]
+pub mod serial;
 
-// #[cfg(feature = "device-selected")]
-// pub mod signature;
+#[cfg(feature = "device-selected")]
+pub mod signature;
 
 #[cfg(feature = "device-selected")]
 pub mod timer;
