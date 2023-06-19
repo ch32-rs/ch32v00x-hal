@@ -1,26 +1,116 @@
 //! Universal Synchronous Asynchronous Receiver Transmitter (USART)
 
+use crate::pac::{AFIO, USART1};
+use crate::rcc::{BusClock, Clocks, Enable, Rcc, Reset};
+use core::convert::Infallible;
 use core::fmt;
-use core::marker::PhantomData;
-use core::ops::Deref;
-use core::ops::DerefMut;
-use core::pin::Pin;
-use core::ptr;
+use embedded_hal::serial::{Read, Write};
 
-use crate::gpio::Floating;
-use crate::gpio::Input;
-use crate::hal::prelude::*;
-use crate::hal::serial;
-use crate::pac;
-use crate::rcc::{BusClock, Enable, Reset};
-use crate::state;
+pub trait Ck<const REMAP: u8> {
+    fn enable(usart: &USART1) {
+        usart.ctlr2.modify(|_, w| w.clken().set_bit());
+    }
+}
 
-use crate::pac::{AFIO, RCC, UART4, UART5, UART7, USART1, USART2, USART3};
+pub trait Tx<const REMAP: u8> {
+    fn enable(usart: &USART1) {
+        usart.ctlr1.modify(|_, w| w.te().set_bit());
+    }
+}
 
-use crate::gpio::{self, Alternate};
+pub trait Rx<const REMAP: u8> {
+    fn enable(usart: &USART1) {
+        usart.ctlr1.modify(|_, w| w.re().set_bit());
+    }
+}
 
-use crate::rcc::Clocks;
-use crate::{BitsPerSecond, U32Ext};
+pub trait Cts<const REMAP: u8> {
+    fn enable(usart: &USART1) {
+        usart.ctlr3.modify(|_, w| w.ctse().set_bit());
+    }
+}
+
+pub trait Rts<const REMAP: u8> {
+    fn enable(usart: &USART1) {
+        usart.ctlr3.modify(|_, w| w.rtse().set_bit());
+    }
+}
+
+pub struct NoCk {}
+pub struct NoTx {}
+pub struct NoRx {}
+pub struct NoCts {}
+pub struct NoRts {}
+
+impl<const T: u8> Ck<{ T }> for NoCk {
+    fn enable(usart: &USART1) {
+        usart.ctlr2.modify(|_, w| w.clken().clear_bit());
+    }
+}
+
+impl<const T: u8> Tx<{ T }> for NoTx {
+    fn enable(usart: &USART1) {
+        usart.ctlr1.modify(|_, w| w.te().clear_bit());
+    }
+}
+
+impl<const T: u8> Rx<{ T }> for NoRx {
+    fn enable(usart: &USART1) {
+        usart.ctlr1.modify(|_, w| w.re().clear_bit());
+    }
+}
+
+impl<const T: u8> Cts<{ T }> for NoCts {
+    fn enable(usart: &USART1) {
+        usart.ctlr3.modify(|_, w| w.ctse().clear_bit());
+    }
+}
+
+impl<const T: u8> Rts<{ T }> for NoRts {
+    fn enable(usart: &USART1) {
+        usart.ctlr3.modify(|_, w| w.rtse().clear_bit());
+    }
+}
+
+/// Serial error
+#[derive(Debug)]
+#[non_exhaustive]
+pub enum Error {
+    /// Framing error
+    Framing,
+    /// Noise error
+    Noise,
+    /// RX buffer overrun
+    Overrun,
+    /// Parity check error
+    Parity,
+}
+
+pub trait UsartExt {
+    fn usart<const REMAP: u8, TX: Tx<REMAP>, RX: Rx<REMAP>>(
+        self,
+        tx: TX,
+        rx: RX,
+        config: Config,
+        rcc: &mut Rcc,
+        clocks: &Clocks,
+    ) -> Usart<NoCk, TX, RX, NoCts, NoRts>;
+}
+
+pub struct Usart<CK, TX, RX, CTS, RTS> {
+    usart: USART1,
+    ck: CK,
+    tx: TX,
+    rx: RX,
+    cts: CTS,
+    rts: RTS,
+}
+
+impl<CK, TX, RX, CTS, RTS> Usart<CK, TX, RX, CTS, RTS> {
+    pub fn free(self) -> (CK, TX, RX, CTS, RTS, USART1) {
+        (self.ck, self.tx, self.rx, self.cts, self.rts, self.usart)
+    }
+}
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum DataBits {
@@ -79,80 +169,49 @@ impl Default for Config {
     }
 }
 
-/// Serial error
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-#[non_exhaustive]
-pub enum Error {
-    /// Framing error
-    Framing,
-    /// Noise error
-    Noise,
-    /// RX buffer overrun
-    Overrun,
-    /// Parity check error
-    Parity,
-    /// Buffer too large for DMA
-    BufferTooLong,
-}
+impl UsartExt for USART1 {
+    fn usart<const REMAP: u8, TX: Tx<REMAP>, RX: Rx<REMAP>>(
+        self,
+        tx: TX,
+        rx: RX,
+        config: Config,
+        rcc: &mut Rcc,
+        clocks: &Clocks,
+    ) -> Usart<NoCk, TX, RX, NoCts, NoRts> {
+        let usart = self;
 
-pub trait TxPin<USART> {
-    // Set up pins for AFIO remap function
-    fn setup(&self);
-}
+        USART1::enable(&mut rcc.apb2);
+        USART1::reset(&mut rcc.apb2);
 
-impl TxPin<USART1> for gpio::PA9<Alternate> {
-    fn setup(&self) {}
-}
+        AFIO::enable(&mut rcc.apb2);
 
-impl TxPin<USART1> for gpio::PB6<Alternate> {
-    fn setup(&self) {
-        if AFIO::is_disabled() {
-            unsafe {
-                AFIO::enable_unchecked();
-                USART1::reset_unchecked();
-            }
-        }
-        let afio = unsafe { &*AFIO::ptr() };
-        afio.pcfr.modify(|_, w| w.usart1rm().set_bit());
-    }
-}
-
-pub struct UartTx<USART, P: TxPin<USART>> {
-    phantom: PhantomData<(USART, P)>,
-}
-
-impl<USART, PIN> UartTx<USART, PIN>
-where
-    PIN: TxPin<USART>,
-    USART: Instance,
-{
-    pub fn new(usart: USART, pin: PIN, clocks: &Clocks, config: Config) -> Self {
-        unsafe {
-            USART::enable_unchecked();
-            USART::reset_unchecked();
-        }
-
-        // setup remap
-        pin.setup();
-
-        let usart = unsafe { &*USART::ptr() };
-
-        // baudrate calculation
-        let apbclk = USART::clock(&clocks).raw(); // pclk2 or pclk1
+        // TODO: I think there might be too much drift in the internal clock for values higher than 38400, maybe we need to use the pll for that?
+        let apbclk = USART1::clock(&clocks).raw();
         let integer_divider = (25 * apbclk) / (4 * config.baudrate);
-        let mut tmpreg = (integer_divider / 100) << 4;
-        let fractional_divider = integer_divider - (100 * (tmpreg >> 4));
-        tmpreg |= (((fractional_divider * 16) + 50) / 100) & 0x0F;
+        let div_m = integer_divider / 100;
+        let div_f = integer_divider - 100 * div_m;
 
-        usart.brr.write(|w| unsafe { w.bits(tmpreg) });
+        usart.brr.write(|w| {
+            w.div_fraction()
+                .variant(div_f as u8)
+                .div_mantissa()
+                .variant(div_m as u16)
+        });
 
-        // stopbits
+        let afio = unsafe { &(*AFIO::ptr()) };
+
+        afio.pcfr.modify(|_, w| {
+            w.usart1rm()
+                .bit(REMAP & 0b1 == 1)
+                .usart1remap1()
+                .bit((REMAP & 0b10) >> 1 == 1)
+        });
+
+        // set stop bits
         usart
             .ctlr2
-            .modify(|_, w| unsafe { w.stop().bits(config.stop_bits.to_raw()) });
+            .modify(|_, w| w.stop().variant(config.stop_bits.to_raw()));
 
-        // databits, parity
         usart.ctlr1.modify(|_, w| {
             w.m()
                 .bit(config.data_bits == DataBits::DataBits9)
@@ -160,128 +219,136 @@ where
                 .bit(config.parity != Parity::ParityNone)
                 .ps()
                 .bit(config.parity == Parity::ParityOdd)
-                .te()
-                .set_bit()
         });
 
-        // TODO: no dma, no flow control
-        usart.ctlr3.modify(|_, w| {
-            w.ctse()
-                .clear_bit()
-                .rtse()
-                .clear_bit()
-                .dmat()
-                .clear_bit()
-                .dmar()
-                .clear_bit()
-        });
+        TX::enable(&usart);
+        RX::enable(&usart);
 
-        // enable
+        // enable usart
         usart.ctlr1.modify(|_, w| w.ue().set_bit());
 
-        Self {
-            phantom: PhantomData,
+        Usart {
+            ck: NoCk {},
+            tx,
+            rx,
+            cts: NoCts {},
+            rts: NoRts {},
+            usart,
         }
     }
 }
 
-impl<USART, PIN> embedded_hal::serial::Write<u8> for UartTx<USART, PIN>
-where
-    PIN: TxPin<USART>,
-    USART: Instance,
-{
-    type Error = Error;
+impl<CK, TX, RX, CTS, RTS> Usart<CK, TX, RX, CTS, RTS> {
+    pub fn use_clock<const REMAP: u8>(&mut self, clock: CK)
+    where
+        CK: Ck<REMAP>,
+        TX: Tx<REMAP>,
+        RX: Rx<REMAP>,
+    {
+        CK::enable(&self.usart);
+        self.ck = clock;
+    }
 
-    fn write(&mut self, word: u8) -> nb::Result<(), Self::Error> {
-        let usart = unsafe { &*USART::ptr() };
-        if usart.statr.read().tc().bit_is_clear() {
-            Err(nb::Error::WouldBlock)
-        } else {
-            usart.datar.write(|w| unsafe { w.dr().bits(word as _) });
+    pub fn write_u16(&mut self, word: u16) -> nb::Result<(), Infallible> {
+        if self.usart.statr.read().txe().bit_is_set() {
+            self.usart.datar.write(|w| w.dr().variant(word));
             Ok(())
+        } else {
+            Err(nb::Error::WouldBlock)
         }
     }
 
-    fn flush(&mut self) -> nb::Result<(), Self::Error> {
-        let usart = unsafe { &*USART::ptr() };
-        if usart.statr.read().tc().bit_is_set() {
+    pub fn flush(&mut self) -> nb::Result<(), Infallible> {
+        if self.usart.statr.read().tc().bit_is_set() {
             Ok(())
         } else {
             Err(nb::Error::WouldBlock)
+        }
+    }
+
+    pub fn read_u16(&mut self) -> nb::Result<u16, Error> {
+        let statr = self.usart.statr.read();
+
+        // Check for any errors
+        let err = if statr.pe().bit_is_set() {
+            Some(Error::Parity)
+        } else if statr.fe().bit_is_set() {
+            Some(Error::Framing)
+        } else if statr.ne().bit_is_set() {
+            Some(Error::Noise)
+        } else if statr.ore().bit_is_set() {
+            Some(Error::Overrun)
+        } else {
+            None
+        };
+
+        if let Some(err) = err {
+            // Some error occurred. In order to clear that error flag, you have to
+            // do a read from the statr register followed by a read from the datar register.
+            let _ = self.usart.statr.read();
+            let _ = self.usart.datar.read();
+            Err(nb::Error::Other(err))
+        } else {
+            // Check if a byte is available
+            if statr.rxne().bit_is_set() {
+                // Read the received byte
+                Ok(self.usart.datar.read().dr().bits())
+            } else {
+                Err(nb::Error::WouldBlock)
+            }
         }
     }
 }
 
-impl<USART, PIN> core::fmt::Write for UartTx<USART, PIN>
+impl<CK, TX, RX, CTS, RTS> core::fmt::Write for Usart<CK, TX, RX, CTS, RTS>
 where
-    PIN: TxPin<USART> + 'static,
-    USART: Instance + 'static,
+    CK: 'static,
+    TX: 'static,
+    RX: 'static,
+    CTS: 'static,
+    RTS: 'static,
 {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         (self as &mut dyn embedded_hal::serial::Write<u8, Error = _>).write_str(s)
     }
 }
 
-/// embedded-hal alpha serial implementation
-impl embedded_hal_alpha::serial::Error for Error {
-    fn kind(&self) -> embedded_hal_alpha::serial::ErrorKind {
-        match self {
-            Error::Framing => embedded_hal_alpha::serial::ErrorKind::FrameFormat,
-            Error::Noise => embedded_hal_alpha::serial::ErrorKind::Noise,
-            Error::Overrun => embedded_hal_alpha::serial::ErrorKind::Overrun,
-            Error::Parity => embedded_hal_alpha::serial::ErrorKind::Parity,
-            Error::BufferTooLong => embedded_hal_alpha::serial::ErrorKind::Other,
-        }
+impl<CK, TX, RX, CTS, RTS> Write<u8> for Usart<CK, TX, RX, CTS, RTS> {
+    type Error = Infallible;
+
+    fn write(&mut self, word: u8) -> nb::Result<(), Self::Error> {
+        self.write_u16(word as u16)
+    }
+
+    fn flush(&mut self) -> nb::Result<(), Self::Error> {
+        self.flush()
     }
 }
 
-impl<USART, PIN> embedded_hal_alpha::serial::ErrorType for UartTx<USART, PIN>
-where
-    PIN: TxPin<USART>,
-{
+impl<CK, TX, RX, CTS, RTS> Write<u16> for Usart<CK, TX, RX, CTS, RTS> {
+    type Error = Infallible;
+
+    fn write(&mut self, word: u16) -> nb::Result<(), Self::Error> {
+        self.write_u16(word)
+    }
+
+    fn flush(&mut self) -> nb::Result<(), Self::Error> {
+        self.flush()
+    }
+}
+
+impl<CK, TX, RX, CTS, RTS> Read<u8> for Usart<CK, TX, RX, CTS, RTS> {
     type Error = Error;
-}
 
-impl<USART, PIN> embedded_hal_alpha::serial::Write<u8> for UartTx<USART, PIN>
-where
-    PIN: TxPin<USART>,
-    USART: Instance,
-{
-    fn write(&mut self, buffer: &[u8]) -> Result<(), Self::Error> {
-        todo!()
-    }
-
-    fn flush(&mut self) -> Result<(), Self::Error> {
-        todo!()
+    fn read(&mut self) -> nb::Result<u8, Self::Error> {
+        self.read_u16().map(|word16| word16 as u8)
     }
 }
 
-/// Implemented by all USART instances
-pub trait Instance: Deref<Target = pac::usart1::RegisterBlock> + Enable + Reset + BusClock {
-    fn ptr() -> *const pac::usart1::RegisterBlock;
-}
+impl<CK, TX, RX, CTS, RTS> Read<u16> for Usart<CK, TX, RX, CTS, RTS> {
+    type Error = Error;
 
-macro_rules! impl_instance {
-    ($(
-        $USARTX:ident: ($usartXsel:ident),
-    )+) => {
-        $(
-            impl Instance for $USARTX {
-                fn ptr() -> *const pac::usart1::RegisterBlock {
-                    $USARTX::ptr()
-                }
-            }
-        )+
+    fn read(&mut self) -> nb::Result<u16, Self::Error> {
+        self.read_u16()
     }
-}
-
-impl_instance! {
-    USART1: (usart1sel),
-    USART2: (usart2sel),
-}
-
-#[cfg(any(feature = "ch32v203c8", feature = "ch32v203rb"))]
-impl_instance! {
-    USART3: (usart3sel),
-    USART4: (usart4sel),
 }
