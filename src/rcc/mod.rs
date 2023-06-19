@@ -435,6 +435,18 @@ impl BusClock for AHB {
     }
 }
 
+impl BusClock for APB1 {
+    fn clock(clocks: &Clocks) -> Hertz {
+        clocks.hclk
+    }
+}
+
+impl BusClock for APB2 {
+    fn clock(clocks: &Clocks) -> Hertz {
+        clocks.hclk
+    }
+}
+
 /// Bus associated to peripheral
 pub trait RccBus: crate::Sealed {
     /// Bus type;
