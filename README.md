@@ -20,7 +20,7 @@ This is a WIP implementation of the embedded-hal traits for the CH32V0 family of
 - [ ] USART: Universal Synchronous Asynchronous Receiver Transmitter
 - [ ] I2C: Inter-intergrated Circuit interface
 - [ ] SPI: Serial Peripheral Interface
-- [ ] ESIG: Electronic Signature
+- [x] ESIG: Electronic Signature
 - [ ] FLASH: Flash memory and user option bytes
 - [ ] EXTEND: Extended configuration
 - [ ] DBG: Debug support
