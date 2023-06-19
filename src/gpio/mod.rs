@@ -127,9 +127,9 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, Output<MODE>> {
         let offset = 4 * { N & 0b111 };
 
         unsafe {
-            (*Gpio::<P>::ptr()).cfglr.modify(|r, w| {
-                w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset))
-            })
+            (*Gpio::<P>::ptr())
+                .cfglr
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset)))
         };
 
         self
@@ -144,9 +144,9 @@ impl<const P: char, const N: u8> Pin<P, N, Alternate<PushPull>> {
         let offset = 4 * { N & 0b111 };
 
         unsafe {
-            (*Gpio::<P>::ptr()).cfglr.modify(|r, w| {
-                w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset))
-            })
+            (*Gpio::<P>::ptr())
+                .cfglr
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset)))
         };
 
         self
