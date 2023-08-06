@@ -142,6 +142,23 @@ where
             f(s1, s2)
         } {}
     }
+
+    /// Check STAR1 error flags
+    fn check_error(&self) -> Result<(), Error> {
+        // Check error codes
+        let s1 = self.i2c.star1.read();
+        if s1.berr().bit() {
+            return Err(Error::BusError);
+        } else if s1.af().bit() {
+            return Err(Error::AcknowledgeFailure);
+        } else if s1.arlo().bit() {
+            return Err(Error::ArbitrationLost);
+        } else if s1.ovr().bit() {
+            return Err(Error::Overrun);
+        } else {
+            Ok(())
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -201,19 +218,66 @@ where
         // Stop transmission
         self.i2c.ctlr1.modify(|_, w| w.stop().set_bit());
 
-        // Check error codes
-        let s1 = self.i2c.star1.read();
-        if s1.berr().bit() {
-            return Err(Error::BusError);
-        } else if s1.af().bit() {
-            return Err(Error::AcknowledgeFailure);
-        } else if s1.arlo().bit() {
-            return Err(Error::ArbitrationLost);
-        } else if s1.ovr().bit() {
-            return Err(Error::Overrun);
+        self.check_error()
+    }
+}
+
+impl<Scl, Sda> embedded_hal::blocking::i2c::Read for I2c<Scl, Sda>
+where
+    (Scl, Sda): I2C1Pair,
+{
+    type Error = Error;
+
+    fn read(&mut self, address: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
+        // Send new start event// Wait till idle
+        self.wait_while(|_, s2| s2.busy().bit_is_set());
+
+        self.i2c.ctlr1.modify(|_, w| w.start().set_bit());
+
+        // Wait till start has been sent and master mode is assigned
+        self.wait_while(|s1, s2| {
+            s1.sb().bit_is_clear() || s2.busy().bit_is_clear() || s2.msl().bit_is_clear()
+        });
+
+        // Send address + read flag
+        self.i2c.datar.write(|w| w.datar().variant((address << 1) | 0b1));
+
+        // Wait address is till sent
+        self.wait_while(|s1, s2| {
+            s1.addr().bit_is_clear()
+                || s2.busy().bit_is_clear()
+                || s2.msl().bit_is_clear()
+        });
+
+        // Send each byte one by one
+        for byte in buffer {
+            self.wait_while(|s1, s2| s1.rx_ne().bit_is_clear() || s2.msl().bit_is_clear() || s2.busy().bit_is_clear());
+            *byte = self.i2c.datar.read().datar().bits();
         }
 
-        Ok(())
+        // Stop transmission
+        self.i2c.ctlr1.modify(|_, w| w.stop().set_bit());
+
+        self.check_error()
+    }
+
+    
+}
+
+impl<Scl, Sda> embedded_hal::blocking::i2c::WriteRead for I2c<Scl, Sda>
+where
+    (Scl, Sda): I2C1Pair,
+{
+    type Error = Error;
+
+    fn write_read(
+        &mut self,
+        address: u8,
+        bytes: &[u8],
+        buffer: &mut [u8],
+    ) -> Result<(), Self::Error> {
+        embedded_hal::blocking::i2c::Write::write(self, address, bytes)?;
+        embedded_hal::blocking::i2c::Read::read(self, address, buffer)
     }
 }
 
