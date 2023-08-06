@@ -1,13 +1,11 @@
 #![no_std]
 #![no_main]
 
+use core::fmt::Write;
 use panic_halt as _;
 use riscv_rt::entry;
 
-use core::fmt::Write;
-
 use ch32v00x_hal::prelude::*;
-use ch32v00x_hal::rcc::Clocks;
 use ch32v00x_hal::serial::Config;
 use ch32v00x_hal::signature::{FlashSize, Uid};
 
@@ -18,8 +16,7 @@ fn main() -> ! {
     let p = ch32v0::ch32v003::Peripherals::take().unwrap();
 
     let mut rcc = p.RCC.constrain();
-
-    let clocks = Clocks::default();
+    let clocks = rcc.config.freeze();
 
     let gpiod = p.GPIOD.split(&mut rcc);
 

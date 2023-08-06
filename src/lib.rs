@@ -43,6 +43,12 @@ pub mod signature;
 #[cfg(feature = "device-selected")]
 pub mod timer;
 
+#[cfg(feature = "device-selected")]
+pub mod afio;
+
+#[cfg(feature = "device-selected")]
+pub mod i2c;
+
 pub mod state {
     /// Indicates that a peripheral is enabled
     pub struct Enabled;

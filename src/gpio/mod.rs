@@ -124,12 +124,10 @@ impl<const P: char, const N: u8, MODE> PinExt for Pin<P, N, MODE> {
 impl<const P: char, const N: u8, MODE> Pin<P, N, Output<MODE>> {
     /// Set pin speed
     pub fn set_speed(self, speed: Speed) -> Self {
-        let offset = 4 * { N & 0b111 };
-
         unsafe {
-            (*Gpio::<P>::ptr())
-                .cfglr
-                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset)))
+            (*Gpio::<P>::ptr()).cfglr.modify(|r, w| {
+                w.bits((r.bits() & !(0b11 << Self::OFFSET)) | ((speed as u32) << Self::OFFSET))
+            })
         };
 
         self
@@ -141,12 +139,10 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, Output<MODE>> {
 impl<const P: char, const N: u8> Pin<P, N, Alternate<PushPull>> {
     /// Set pin speed
     pub fn set_speed(self, speed: Speed) -> Self {
-        let offset = 4 * { N & 0b111 };
-
         unsafe {
-            (*Gpio::<P>::ptr())
-                .cfglr
-                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset)))
+            (*Gpio::<P>::ptr()).cfglr.modify(|r, w| {
+                w.bits((r.bits() & !(0b11 << Self::OFFSET)) | ((speed as u32) << Self::OFFSET))
+            })
         };
 
         self
@@ -157,12 +153,12 @@ impl<const P: char, const N: u8> Pin<P, N, Alternate<PushPull>> {
     /// Turns pin alternate configuration pin into open drain
     pub fn set_open_drain(self) -> Pin<P, N, Alternate<OpenDrain>> {
         // CNFy
-        let offset = 4 * { N & 0b111 } + 2;
+        let offset = Self::OFFSET + 2;
 
         unsafe {
             (*Gpio::<P>::ptr())
                 .cfglr
-                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (0b10 << offset)))
+                .modify(|r, w| w.bits((r.bits() & !(0b11 << offset)) | (0b11 << offset)))
         };
 
         Pin::new()
@@ -172,6 +168,9 @@ impl<const P: char, const N: u8> Pin<P, N, Alternate<PushPull>> {
 // TODO: Erase pin number, Erase pin number and port number
 
 impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
+    /// Offset into the config register
+    const OFFSET: u8 = N * 4;
+
     /// Set the output of the pin regardless of its mode.
     /// Primarily used to set the output value of the pin
     /// before changing its mode to an output to avoid
@@ -323,15 +322,16 @@ macro_rules! gpio {
     }
 }
 
+// Only 2 pins are exposed on any of the package variants
 gpio!(GPIOA, gpioa, PA, 'A', PAn, iopaen, ioparst, [
-    PA0: (pa0, 0),
+    // PA0: (pa0, 0),
     PA1: (pa1, 1),
     PA2: (pa2, 2),
-    PA3: (pa3, 3),
-    PA4: (pa4, 4),
-    PA5: (pa5, 5),
-    PA6: (pa6, 6),
-    PA7: (pa7, 7),
+    // PA3: (pa3, 3),
+    // PA4: (pa4, 4),
+    // PA5: (pa5, 5),
+    // PA6: (pa6, 6),
+    // PA7: (pa7, 7),
 ]);
 
 gpio!(GPIOC, gpioc, PC, 'C', PCn, iopcen, iopcrst, [
@@ -347,7 +347,7 @@ gpio!(GPIOC, gpioc, PC, 'C', PCn, iopcen, iopcrst, [
 
 gpio!(GPIOD, gpiod, PD, 'D', PDn, iopden, iopdrst, [
     PD0: (pd0, 0),
-    PD1: (pd1, 1),
+    PD1: (pd1, 1, super::Alternate), // By default in SWD mode
     PD2: (pd2, 2),
     PD3: (pd3, 3),
     PD4: (pd4, 4),

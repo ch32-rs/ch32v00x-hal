@@ -4,12 +4,11 @@ use super::*;
 
 impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
     pub(super) fn set_alternate(&mut self) {
-        let offset = (4 * N) % 32;
         let cfgr = 0b1011; // Alternative PushPull, Output 50MHz
         unsafe {
-            (*Gpio::<P>::ptr())
-                .cfglr
-                .modify(|r, w| w.bits((r.bits() & !(0b1111 << offset)) | (cfgr << offset)));
+            (*Gpio::<P>::ptr()).cfglr.modify(|r, w| {
+                w.bits((r.bits() & !(0b1111 << Self::OFFSET)) | (cfgr << Self::OFFSET))
+            });
         }
     }
 
@@ -21,7 +20,9 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
 
     /// Configures the pin to operate in alternate open drain mode
     pub fn into_alternate_open_drain(self) -> Pin<P, N, Alternate<OpenDrain>> {
-        self.into_alternate().set_open_drain()
+        self.into_alternate()
+            .set_speed(Speed::Mhz50)
+            .set_open_drain()
     }
 
     /// Configures the pin to operate as a floating input pin
@@ -93,12 +94,11 @@ impl<const P: char, const N: u8, MODE> Pin<P, N, MODE> {
     /// ensure they use this properly.
     #[inline(always)]
     pub(super) fn mode<M: PinMode>(&mut self) {
-        let offset = (4 * N) % 32;
         let cfgr = (M::CNFR << 2) | M::MODER;
         unsafe {
-            (*Gpio::<P>::ptr())
-                .cfglr
-                .modify(|r, w| w.bits((r.bits() & !(0b1111 << offset)) | (cfgr << offset)));
+            (*Gpio::<P>::ptr()).cfglr.modify(|r, w| {
+                w.bits((r.bits() & !(0b1111 << Self::OFFSET)) | (cfgr << Self::OFFSET))
+            });
             if let Some(odr) = M::ODR {
                 (*Gpio::<P>::ptr())
                     .outdr

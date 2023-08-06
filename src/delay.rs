@@ -9,9 +9,9 @@ pub struct CycleDelay {
 }
 
 impl CycleDelay {
-    pub fn new(clocks: &Clocks) -> CycleDelay { 
-        CycleDelay { 
-            rate: clocks.hclk()
+    pub fn new(clocks: &Clocks) -> CycleDelay {
+        CycleDelay {
+            rate: clocks.hclk(),
         }
     }
 }

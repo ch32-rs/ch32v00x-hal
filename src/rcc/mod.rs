@@ -327,7 +327,7 @@ impl Config {
             }
         }
 
-        // Calculate AHB speed
+        // Calculate AHB and APB speeds
         clocks.hclk = clocks.sysclk / self.ahb_pre;
 
         // Configure low speed internal RC (128khz)
