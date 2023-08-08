@@ -44,9 +44,6 @@ pub mod signature;
 pub mod timer;
 
 #[cfg(feature = "device-selected")]
-pub mod afio;
-
-#[cfg(feature = "device-selected")]
 pub mod i2c;
 
 pub mod state {

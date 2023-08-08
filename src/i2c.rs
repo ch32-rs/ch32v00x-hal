@@ -1,11 +1,10 @@
 use fugit::{HertzU32, RateExtU32};
 
 use crate::{
-    afio::Afio,
     gpio::*,
     pac::{
         i2c1::{star1, star2},
-        I2C1,
+        AFIO, I2C1,
     },
     rcc::{BusClock, Clocks, Enable, Rcc, Reset},
 };
@@ -79,7 +78,6 @@ where
         scl: Scl,
         sda: Sda,
         config: I2cConfig,
-        afio: &mut Afio,
         rcc: &mut Rcc,
         clocks: &Clocks,
     ) -> Self {
@@ -87,12 +85,19 @@ where
         I2C1::enable(&mut rcc.apb1);
         I2C1::reset(&mut rcc.apb1);
 
+        AFIO::enable(&mut rcc.apb2);
+
         // Reset peripheral state, just to be safe?
         i2c.ctlr1.modify(|_, w| w.swrst().set_bit());
         i2c.ctlr1.modify(|_, w| w.swrst().clear_bit());
 
         // Configure the remap bits in AFIO to match our pin selection
-        afio.set_i2c1_remap(<(Scl, Sda)>::REMAP_BITS);
+        let (high, low) = <(Scl, Sda) as I2C1Pair>::REMAP_BITS;
+        unsafe {
+            (*AFIO::ptr())
+                .pcfr
+                .modify(|_, w| w.i2c1remap1().bit(high).i2c1rm().bit(low));
+        }
 
         // Configure peripheral clock (valid range 2-36mhz)
         let freq = I2C1::clock(clocks).to_MHz().clamp(2, 36);
@@ -240,18 +245,20 @@ where
         });
 
         // Send address + read flag
-        self.i2c.datar.write(|w| w.datar().variant((address << 1) | 0b1));
+        self.i2c
+            .datar
+            .write(|w| w.datar().variant((address << 1) | 0b1));
 
         // Wait address is till sent
         self.wait_while(|s1, s2| {
-            s1.addr().bit_is_clear()
-                || s2.busy().bit_is_clear()
-                || s2.msl().bit_is_clear()
+            s1.addr().bit_is_clear() || s2.busy().bit_is_clear() || s2.msl().bit_is_clear()
         });
 
         // Send each byte one by one
         for byte in buffer {
-            self.wait_while(|s1, s2| s1.rx_ne().bit_is_clear() || s2.msl().bit_is_clear() || s2.busy().bit_is_clear());
+            self.wait_while(|s1, s2| {
+                s1.rx_ne().bit_is_clear() || s2.msl().bit_is_clear() || s2.busy().bit_is_clear()
+            });
             *byte = self.i2c.datar.read().datar().bits();
         }
 
@@ -260,8 +267,6 @@ where
 
         self.check_error()
     }
-
-    
 }
 
 impl<Scl, Sda> embedded_hal::blocking::i2c::WriteRead for I2c<Scl, Sda>

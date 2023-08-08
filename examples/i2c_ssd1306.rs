@@ -20,9 +20,6 @@ fn main() -> ! {
     let mut rcc = p.RCC.constrain();
     let clocks = rcc.config.freeze();
 
-    // Enable alternate function multiplexer
-    let mut afio = p.AFIO.configure(&mut rcc);
-
     // enable GPIO power domains
     let c = p.GPIOC.split(&mut rcc);
 
@@ -36,7 +33,6 @@ fn main() -> ! {
         scl,
         sda,
         I2cConfig::fast_mode(),
-        &mut afio,
         &mut rcc,
         &clocks,
     );
