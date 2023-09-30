@@ -185,7 +185,6 @@ impl UsartExt for USART1 {
 
         AFIO::enable(&mut rcc.apb2);
 
-        // TODO: I think there might be too much drift in the internal clock for values higher than 38400, maybe we need to use the pll for that?
         let apbclk = USART1::clock(&clocks).raw();
         let integer_divider = (25 * apbclk) / (4 * config.baudrate);
         let div_m = integer_divider / 100;
