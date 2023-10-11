@@ -25,10 +25,6 @@ fn main() -> ! {
 
     let mut usart_config = Config::default();
 
-    // for some reason baudrates above 38400 don't seem possible
-    // maybe we need to use the pll clock source for that
-    usart_config.baudrate = 38400;
-
     let mut usart = p.USART1.usart(tx, rx, usart_config, &mut rcc, &clocks);
 
     let flash_size = FlashSize::get().kilo_bytes();
