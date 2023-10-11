@@ -28,6 +28,9 @@ pub mod rcc;
 #[cfg(feature = "device-selected")]
 pub mod gpio;
 
+#[cfg(feature = "device-selected")]
+pub mod pwr;
+
 // #[cfg(feature = "device-selected")]
 // pub mod pfic;
 
