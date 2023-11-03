@@ -67,7 +67,7 @@ SECTIONS
         _data_lma = LOADADDR(.data);
         PROVIDE(_data_vma = .);
         *(.data .data.*)
-        . = ALIGN(8);
+        . = ALIGN(4);
         PROVIDE( __global_pointer$ = . + 0x800 );
         /* These sections are used by the BLE lib */
         *(.sdata .sdata.*)

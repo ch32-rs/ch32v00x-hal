@@ -28,7 +28,6 @@ fn main() -> ! {
     let mut usart = p.USART1.usart(tx, rx, usart_config, &mut rcc, &clocks);
 
     let flash_size = hal::signature::flash_size_kb();
-
     let uid = hal::signature::unique_id();
 
     writeln!(usart, "flash size: {}KiB\r", flash_size).ok();
