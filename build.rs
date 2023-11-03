@@ -1,9 +1,12 @@
-fn main() {
-    // Tell rustc to pass linker scripts to LLD
-    println!("cargo:rustc-link-arg=-Tmemory.x");
-    println!("cargo:rustc-link-arg=-Tlink.x");
+use std::path::PathBuf;
+use std::{env, fs};
 
-    // Rerun this script only when necesary
+fn main() {
+    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+
+    fs::write(out_dir.join("memory.x"), include_bytes!("memory.x")).unwrap();
+    println!("cargo:rustc-link-search={}", out_dir.display());
+
     println!("cargo:rerun-if-changed=memory.x");
     println!("cargo:rerun-if-changed=build.rs");
 }
