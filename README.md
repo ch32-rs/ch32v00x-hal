@@ -36,17 +36,13 @@ The ch32-rs team maintains an updated branch for Rust with riscv32ec support.
 ### Prerequisites
 
 - A working Rust installation (rustup)
-- Build essentials (gcc, make, etc.) and git
+- Build essentials (gcc, make, ninja, etc.) and git
 
 ### Build a Rust compiler with riscv32ec support
 
-- Rust uses its own llvm fork
-- The original <https://reviews.llvm.org/D70401> PR is always get rebased and updated, so we can not use it directly. (A joke, it's created in 2019 and still not merged today 2023-11-03)
-- Rust's cargo is always get updated, so it can not be used with an older version of rustc, if long enough time passed.
-
 Steps:
 
-- Check out <https://github.com/ch32-rs/rust> branch `rv32ec` (This is a fork of rust-lang/rust) with llvm prepared
+- Check out <https://github.com/ch32-rs/rust> branch `rv32ec` (This is a fork of rust-lang/rust) with llvm patched
 - `git submodule update --init --recursive`
 - Refer <https://noxim.xyz/blog/rust-ch32v003/custom-rust/>, add `config.toml`
 
