@@ -58,7 +58,7 @@ Check the compiled `rustc` with:
 
 ```./build/host/stage1/bin/rustc --print target-list | grep riscv32```
 
-To ses if `riscv32ec-unknown-non-elf` is in the list.
+To see if `riscv32ec-unknown-non-elf` is in the list.
 
 If you prefer to start work from a fresh Rust source tree:
 
@@ -68,9 +68,9 @@ If you prefer to start work from a fresh Rust source tree:
 - `object` crate fork is not necessary, hack it with the following:
 
     ```diff
-    - if features.contains("+e") {
-    -     e_flags |= 0x0008;
-    - }
+    + if features.contains("+e") {
+    +     e_flags |= 0x0008;
+    + }
     ```
 
 ### Prepare the toolchain
