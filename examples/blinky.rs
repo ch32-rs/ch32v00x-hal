@@ -2,11 +2,10 @@
 #![no_main]
 
 use panic_halt as _;
-use riscv_rt::entry;
 
 use ch32v00x_hal::prelude::*;
 
-#[entry]
+#[ch32v_rt::entry]
 fn main() -> ! {
     // To ensure safe access to peripherals, all types are !Copy singletons. The
     // PAC makes us pass these marker types around to access the registers
@@ -17,13 +16,13 @@ fn main() -> ! {
 
     let gpiod = p.GPIOD.split(&mut rcc);
 
-    // let tx = gpiod.pd5.into_alternate();
     let mut led = gpiod.pd6.into_push_pull_output();
-
 
     loop {
         led.toggle();
 
-        unsafe { riscv::asm::delay(10000000); }
+        unsafe {
+            qingke::riscv::asm::delay(10000000);
+        }
     }
 }

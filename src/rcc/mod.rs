@@ -344,7 +344,7 @@ impl Config {
 
         // Whats up with this? From 20x hal
         unsafe {
-            riscv::asm::delay(16);
+            qingke::riscv::asm::delay(16);
         }
 
         clocks

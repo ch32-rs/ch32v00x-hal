@@ -3,7 +3,6 @@
 
 use core::fmt::Write;
 use panic_halt as _;
-use riscv_rt::entry;
 
 use ch32v0::ch32v003 as pac;
 use ch32v00x_hal as hal;
@@ -11,7 +10,7 @@ use ch32v00x_hal as hal;
 use hal::{i2c::*, prelude::*};
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 
-#[entry]
+#[ch32v_rt::entry]
 fn main() -> ! {
     // Initialize peripherals
     let p = pac::Peripherals::take().unwrap();
@@ -28,14 +27,7 @@ fn main() -> ! {
     let scl = c.pc2.into_alternate_open_drain();
 
     // Initialize i2c peripheral
-    let i2c = I2c::i2c1(
-        p.I2C1,
-        scl,
-        sda,
-        I2cConfig::fast_mode(),
-        &mut rcc,
-        &clocks,
-    );
+    let i2c = I2c::i2c1(p.I2C1, scl, sda, I2cConfig::fast_mode(), &mut rcc, &clocks);
 
     // Initialize display
     let i2c = I2CDisplayInterface::new(i2c);

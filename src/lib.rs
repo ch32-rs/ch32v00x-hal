@@ -15,39 +15,20 @@ pub(crate) use embedded_hal as hal;
 #[cfg(feature = "ch32v003")]
 pub use ch32v0::ch32v003 as pac;
 
-// Enable use of interrupt macro
-#[cfg(feature = "rt")]
-pub use crate::pac::interrupt;
-
-#[cfg(feature = "device-selected")]
-pub mod prelude;
-
-#[cfg(feature = "device-selected")]
-pub mod rcc;
-
-#[cfg(feature = "device-selected")]
 pub mod gpio;
-
-#[cfg(feature = "device-selected")]
 pub mod pwr;
-
-// #[cfg(feature = "device-selected")]
+pub mod rcc;
+//
 // pub mod pfic;
-
-#[cfg(feature = "device-selected")]
 pub mod delay;
-
-#[cfg(feature = "device-selected")]
+pub mod i2c;
 pub mod serial;
-
-#[cfg(feature = "device-selected")]
 pub mod signature;
-
-#[cfg(feature = "device-selected")]
 pub mod timer;
 
-#[cfg(feature = "device-selected")]
-pub mod i2c;
+mod critical_section;
+pub mod prelude;
+pub mod rt;
 
 pub mod state {
     /// Indicates that a peripheral is enabled
@@ -57,11 +38,10 @@ pub mod state {
     pub struct Disabled;
 }
 
-#[cfg(feature = "device-selected")]
 mod sealed {
     pub trait Sealed {}
 }
-#[cfg(feature = "device-selected")]
+
 pub(crate) use sealed::Sealed;
 
 /// Formatter helper

@@ -23,7 +23,7 @@ impl embedded_hal_alpha::delay::DelayUs for CycleDelay {
         let cycles = us as u64 * self.rate.to_Hz() as u64 / 2_000_000;
 
         unsafe {
-            riscv::asm::delay(cycles as u32);
+            qingke::riscv::asm::delay(cycles as u32);
         }
     }
 }
