@@ -5,9 +5,10 @@ use core::fmt::Write;
 use panic_halt as _;
 use riscv_rt::entry;
 
-use ch32v00x_hal::prelude::*;
-use ch32v00x_hal::serial::Config;
-use ch32v00x_hal::signature::{FlashSize, Uid};
+use ch32v00x_hal as hal;
+
+use hal::prelude::*;
+use hal::serial::Config;
 
 #[entry]
 fn main() -> ! {
@@ -23,22 +24,16 @@ fn main() -> ! {
     let tx = gpiod.pd5.into_alternate();
     let rx = gpiod.pd6.into_floating_input();
 
-    let mut usart_config = Config::default();
+    let usart_config = Config::default();
 
     let mut usart = p.USART1.usart(tx, rx, usart_config, &mut rcc, &clocks);
 
-    let flash_size = FlashSize::get().kilo_bytes();
+    let flash_size = hal::signature::flash_size_kb();
 
-    let uid_slice = Uid::get().as_bytes();
+    let uid = hal::signature::unique_id();
 
-    let mut uid: u128 = 0;
-
-    for (e, id) in uid_slice.iter().enumerate() {
-        uid += (*id as u128) << (12 - e) * 8;
-    }
-
-    writeln!(usart, "fs: {:?}\r", flash_size).ok();
-    writeln!(usart, "uid: {:?}\r", uid).ok();
+    writeln!(usart, "flash size: {}KiB\r", flash_size).ok();
+    writeln!(usart, "uid: {:02x?}\r", uid).ok();
 
     loop {
         let recv: u8 = match nb::block!(usart.read()) {

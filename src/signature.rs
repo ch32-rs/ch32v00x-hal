@@ -1,47 +1,19 @@
 //! Device signature.
 // Applies for CH32V103, CH32F2x, CH32V2x and CH32V3x.
 
-macro_rules! define_ptr_type {
-    ($name: ident, $ptr: expr) => {
-        impl $name {
-            fn ptr() -> *const Self {
-                $ptr as *const _
-            }
+use core::ptr;
 
-            /// Returns a wrapped reference to the value in flash memory
-            pub fn get() -> &'static Self {
-                unsafe { &*Self::ptr() }
-            }
-        }
-    };
+const ESIG_FLACAP: u32 = 0x1FFFF7E0;
+const ESIG_UNIID: u32 = 0x1FFFF7E8;
+
+/// Flash size in KiB.
+#[inline]
+pub fn flash_size_kb() -> u16 {
+    unsafe { ptr::read_volatile(ESIG_FLACAP as *const u16) }
 }
 
-/// Size of integrated flash
-#[derive(Debug)]
-#[repr(C)]
-pub struct FlashSize(u16);
-define_ptr_type!(FlashSize, 0x1FFFF7E0);
-
-impl FlashSize {
-    /// Read flash size in kilobytes
-    pub fn kilo_bytes(&self) -> u16 {
-        self.0
-    }
-
-    /// Read flash size in bytes
-    pub fn bytes(&self) -> usize {
-        usize::from(self.kilo_bytes()) * 1024
-    }
-}
-
-/// Uniqure Device ID registers
-#[derive(Hash, Debug)]
-#[repr(C)]
-pub struct Uid([u8; 12]);
-define_ptr_type!(Uid, 0x1FFFF7E8);
-
-impl Uid {
-    pub fn as_bytes(&self) -> &[u8] {
-        &self.0
-    }
+/// UID
+#[inline]
+pub fn unique_id() -> &'static [u8; 12] {
+    unsafe { &(*(ESIG_UNIID as *const [u8; 12])) }
 }
