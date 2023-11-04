@@ -12,8 +12,9 @@ compile_error!(
 
 pub(crate) use embedded_hal as hal;
 
-#[cfg(feature = "ch32v003")]
 pub use ch32v0::ch32v003 as pac;
+pub use self::peripheral::{Peripheral, PeripheralRef};
+pub use self::peripherals::Peripherals;
 
 pub mod gpio;
 pub mod pwr;
@@ -29,6 +30,8 @@ pub mod timer;
 mod critical_section;
 pub mod prelude;
 pub mod rt;
+mod peripheral;
+pub mod peripherals;
 
 pub mod state {
     /// Indicates that a peripheral is enabled

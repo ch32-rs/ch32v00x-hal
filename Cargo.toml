@@ -12,7 +12,7 @@ documentation = "https://docs.rs/ch32v00x-hal"
 readme = "README.md"
 
 [dependencies]
-ch32v0 = { version = "0.1.6", features = ["ch32v003", "critical-section"] }
+ch32v0 = { version = "0.1.6", features = ["ch32v003", "critical-section"], path = "../ch32-rs-nightlies/ch32v0" }
 ch32v-rt = "0.0.2"
 critical-section = { version = "1.1.2", features = ["restore-state-u8"] }
 qingke = "0.1.3"
@@ -34,6 +34,11 @@ default = ["ch32v003"]
 device-selected = []
 
 ch32v003 = ["device-selected"]
+
+ch32v003f4p6 = ["device-selected"] # TSSOP20, 18 GPIO
+ch32v003f4u6 = ["device-selected"] # QFN20, 18 GPIO
+ch32v003a4M6 = ["device-selected"] # SOP16, 14 GPIO
+ch32v003j4m6 = ["device-selected"] # SOP8, 6 GPIO
 
 [dev-dependencies]
 panic-halt = "0.2.0"
