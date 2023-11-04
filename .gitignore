@@ -3,3 +3,7 @@
 
 *.bin
 *.hex
+
+/.vscode
+/trash
+
