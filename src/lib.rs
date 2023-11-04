@@ -26,7 +26,7 @@ pub mod signature;
 pub mod timer;
 
 mod critical_section;
-// pub mod debug;
+pub mod debug;
 mod peripheral;
 pub mod peripherals;
 pub mod prelude;
