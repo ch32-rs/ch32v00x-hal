@@ -5,8 +5,9 @@ target = "riscv32ec-unknown-none-elf"
 # runner = "riscv64-unknown-elf-gdb -q -x openocd.gdb"
 # runner = "riscv-none-embed-gdb -q -x openocd.gdb"
 # runner = "gdb -q -x openocd.gdb"
-runner = "wlink -v flash --no-erase"
+# runner = "wlink -v flash"
 
+runner = "wlink -v flash --enable-sdi-print"
 
 [unstable]
 build-std = ["core", "compiler_builtins"]

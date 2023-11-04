@@ -10,11 +10,9 @@ compile_error!(
      e.g. `ch32v00x-hal = { version = \"0.1.0\", features = [\"ch32v003\"] }`"
 );
 
-pub(crate) use embedded_hal as hal;
-
-pub use ch32v0::ch32v003 as pac;
 pub use self::peripheral::{Peripheral, PeripheralRef};
 pub use self::peripherals::Peripherals;
+pub use ch32v0::ch32v003 as pac;
 
 pub mod gpio;
 pub mod pwr;
@@ -28,10 +26,11 @@ pub mod signature;
 pub mod timer;
 
 mod critical_section;
-pub mod prelude;
-pub mod rt;
+// pub mod debug;
 mod peripheral;
 pub mod peripherals;
+pub mod prelude;
+pub mod rt;
 
 pub mod state {
     /// Indicates that a peripheral is enabled

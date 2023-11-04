@@ -16,7 +16,7 @@ impl CycleDelay {
     }
 }
 
-impl embedded_hal_alpha::delay::DelayUs for CycleDelay {
+impl embedded_hal_1::delay::DelayUs for CycleDelay {
     fn delay_us(&mut self, us: u32) {
         // Widen to u64 to ensure no overflow
         // The QingKe RISC-V2A executes an addi in 2 cycles
@@ -28,20 +28,20 @@ impl embedded_hal_alpha::delay::DelayUs for CycleDelay {
     }
 }
 
-impl embedded_hal::blocking::delay::DelayUs<u32> for CycleDelay {
+impl embedded_hal_02::blocking::delay::DelayUs<u32> for CycleDelay {
     fn delay_us(&mut self, us: u32) {
-        embedded_hal_alpha::delay::DelayUs::delay_us(self, us as _);
+        embedded_hal_1::delay::DelayUs::delay_us(self, us as _);
     }
 }
 
-impl embedded_hal::blocking::delay::DelayUs<u16> for CycleDelay {
+impl embedded_hal_02::blocking::delay::DelayUs<u16> for CycleDelay {
     fn delay_us(&mut self, us: u16) {
-        embedded_hal_alpha::delay::DelayUs::delay_us(self, us as _);
+        embedded_hal_1::delay::DelayUs::delay_us(self, us as _);
     }
 }
 
-impl embedded_hal::blocking::delay::DelayUs<u8> for CycleDelay {
+impl embedded_hal_02::blocking::delay::DelayUs<u8> for CycleDelay {
     fn delay_us(&mut self, us: u8) {
-        embedded_hal_alpha::delay::DelayUs::delay_us(self, us as _);
+        embedded_hal_1::delay::DelayUs::delay_us(self, us as _);
     }
 }

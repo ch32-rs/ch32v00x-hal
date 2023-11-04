@@ -4,7 +4,7 @@ use crate::pac::{AFIO, USART1};
 use crate::rcc::{BusClock, Clocks, Enable, Rcc, Reset};
 use core::convert::Infallible;
 use core::fmt;
-use embedded_hal::serial::{Read, Write};
+use embedded_hal_02::serial::{Read, Write};
 
 pub trait Ck<const REMAP: u8> {
     fn enable(usart: &USART1) {
@@ -308,7 +308,7 @@ where
     RTS: 'static,
 {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        (self as &mut dyn embedded_hal::serial::Write<u8, Error = _>).write_str(s)
+        (self as &mut dyn embedded_hal_02::serial::Write<u8, Error = _>).write_str(s)
     }
 }
 

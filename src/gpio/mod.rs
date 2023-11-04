@@ -3,7 +3,7 @@
 use core::fmt;
 use core::marker::PhantomData;
 
-pub use embedded_hal::digital::v2::PinState;
+pub use embedded_hal_02::digital::v2::PinState;
 
 mod convert;
 mod hal_02;

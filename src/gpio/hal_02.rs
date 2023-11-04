@@ -1,7 +1,7 @@
 use core::convert::Infallible;
 
-use embedded_hal::digital::v2::toggleable;
-use embedded_hal::digital::v2::{InputPin, IoPin, OutputPin, PinState, StatefulOutputPin};
+use embedded_hal_02::digital::v2::toggleable;
+use embedded_hal_02::digital::v2::{InputPin, IoPin, OutputPin, PinState, StatefulOutputPin};
 
 use super::{Floating, Input, OpenDrain, Output, Pin, PullDown, PullUp, PushPull};
 

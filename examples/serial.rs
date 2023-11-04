@@ -1,7 +1,8 @@
 #![no_std]
 #![no_main]
 
-use core::fmt::Write;
+use core::fmt::Write as _;
+use embedded_hal_02::serial::{Read, Write};
 use panic_halt as _;
 
 use ch32v00x_hal as hal;

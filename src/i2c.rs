@@ -174,7 +174,7 @@ pub enum Error {
     Overrun,
 }
 
-impl<Scl, Sda> embedded_hal::blocking::i2c::Write for I2c<Scl, Sda>
+impl<Scl, Sda> embedded_hal_02::blocking::i2c::Write for I2c<Scl, Sda>
 where
     (Scl, Sda): I2C1Pair,
 {
@@ -227,7 +227,7 @@ where
     }
 }
 
-impl<Scl, Sda> embedded_hal::blocking::i2c::Read for I2c<Scl, Sda>
+impl<Scl, Sda> embedded_hal_02::blocking::i2c::Read for I2c<Scl, Sda>
 where
     (Scl, Sda): I2C1Pair,
 {
@@ -269,7 +269,7 @@ where
     }
 }
 
-impl<Scl, Sda> embedded_hal::blocking::i2c::WriteRead for I2c<Scl, Sda>
+impl<Scl, Sda> embedded_hal_02::blocking::i2c::WriteRead for I2c<Scl, Sda>
 where
     (Scl, Sda): I2C1Pair,
 {
@@ -281,8 +281,8 @@ where
         bytes: &[u8],
         buffer: &mut [u8],
     ) -> Result<(), Self::Error> {
-        embedded_hal::blocking::i2c::Write::write(self, address, bytes)?;
-        embedded_hal::blocking::i2c::Read::read(self, address, buffer)
+        embedded_hal_02::blocking::i2c::Write::write(self, address, bytes)?;
+        embedded_hal_02::blocking::i2c::Read::read(self, address, buffer)
     }
 }
 
