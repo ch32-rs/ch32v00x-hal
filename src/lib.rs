@@ -30,7 +30,6 @@ pub mod debug;
 mod peripheral;
 pub mod peripherals;
 pub mod prelude;
-pub mod rt;
 
 pub mod state {
     /// Indicates that a peripheral is enabled

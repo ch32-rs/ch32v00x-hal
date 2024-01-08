@@ -10,7 +10,7 @@ use ch32v00x_hal as hal;
 use hal::{i2c::*, prelude::*};
 use ssd1306::{prelude::*, I2CDisplayInterface, Ssd1306};
 
-#[ch32v_rt::entry]
+#[qingke_rt::entry]
 fn main() -> ! {
     // Initialize peripherals
     let p = pac::Peripherals::take().unwrap();

@@ -10,7 +10,7 @@ use ch32v00x_hal as hal;
 use hal::prelude::*;
 use hal::serial::Config;
 
-#[ch32v_rt::entry]
+#[qingke_rt::entry]
 fn main() -> ! {
     // To ensure safe access to peripherals, all types are !Copy singletons. The
     // PAC makes us pass these marker types around to access the registers
