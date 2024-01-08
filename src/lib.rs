@@ -12,6 +12,8 @@ compile_error!(
 
 pub use self::peripheral::{Peripheral, PeripheralRef};
 pub use self::peripherals::Peripherals;
+
+#[cfg(feature = "ch32v003")]
 pub use ch32v0::ch32v003 as pac;
 
 pub mod gpio;
