@@ -15,6 +15,7 @@ pub use self::peripherals::Peripherals;
 
 #[cfg(feature = "ch32v003")]
 pub use ch32v0::ch32v003 as pac;
+use pac::__EXTERNAL_INTERRUPTS as _;
 
 pub mod gpio;
 pub mod pwr;
