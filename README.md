@@ -36,6 +36,7 @@ The ch32-rs team maintains an updated branch for Rust with riscv32ec support.
 ### Prerequisites
 
 - A working Rust installation (rustup)
+- A nightly Cargo in your channels
 - Build essentials (gcc, make, ninja, etc.) and git
 
 ### Build a Rust compiler with riscv32ec support
@@ -73,7 +74,8 @@ To see if `riscv32ec-unknown-non-elf` is in the list.
 
 ### Project toolchain override
 
-In this project directory, run `rustup override set custom-rv32ec` to set default toolchain to the one we just built.
+- In this project directory, run `rustup override set custom-rv32ec` to set default toolchain to the one we just built.
+- run `cargo --version` and ensure the result is nightly Cargo(otherwise, the easiest way to get one is, run `rustup toolchain install nightly`)
 
 ## References
 
