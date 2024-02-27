@@ -6,7 +6,7 @@ This is a WIP implementation of the embedded-hal traits for the CH32V0 family of
 
 > **UPDATE**
 >
-> CH461 is also a RISCV32EC core.
+> CH641 is also a RISCV32EC core.
 
 ## Peripheral status
 
