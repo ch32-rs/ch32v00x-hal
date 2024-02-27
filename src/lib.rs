@@ -67,11 +67,3 @@ impl U32Ext for u32 {
         BitsPerSecond::from_raw(self)
     }
 }
-
-pub fn stack_free() -> usize {
-    extern "C" {
-        static mut _ebss: u32;
-        static mut _stack_top: u32;
-    }
-    unsafe { &mut _stack_top as *mut u32 as usize - &mut _ebss as *mut u32 as usize }
-}
