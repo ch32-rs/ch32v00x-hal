@@ -8,7 +8,7 @@ use ch32v00x_hal as hal;
 use ch32v00x_hal::prelude::*;
 use qingke::riscv;
 
-#[ch32v_rt::entry]
+#[qingke_rt::entry]
 fn main() -> ! {
     hal::debug::SDIPrint::enable();
 

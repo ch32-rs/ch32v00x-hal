@@ -12,7 +12,10 @@ compile_error!(
 
 pub use self::peripheral::{Peripheral, PeripheralRef};
 pub use self::peripherals::Peripherals;
+
+#[cfg(feature = "ch32v003")]
 pub use ch32v0::ch32v003 as pac;
+use pac::__EXTERNAL_INTERRUPTS as _;
 
 pub mod gpio;
 pub mod pwr;
@@ -30,7 +33,6 @@ pub mod debug;
 mod peripheral;
 pub mod peripherals;
 pub mod prelude;
-pub mod rt;
 
 pub mod state {
     /// Indicates that a peripheral is enabled
