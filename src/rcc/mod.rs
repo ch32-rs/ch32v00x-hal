@@ -386,6 +386,22 @@ impl Clocks {
     pub fn lsi(&self) -> Option<Hertz> {
         self.lsi
     }
+
+    /// Returns the adc clock frequency
+    pub fn adcclk(&self) -> Hertz {
+        const ADCPRESC_TABLE: [u8; 20] = [2, 4, 6, 8, 4, 8, 12, 16, 8, 16, 24, 32, 16, 32, 48, 64, 32, 64, 96, 128];
+
+        let rcc = unsafe { &(*RCC::ptr()) };
+        let mut adcpre = rcc.cfgr0.read().adcpre().bits();
+        adcpre = ((adcpre & 0x18) >> 3) | ((adcpre & 0x7) << 2);
+
+        if (adcpre & 0x13) >= 4 {
+            adcpre -= 12;
+        }
+        let presc = ADCPRESC_TABLE[adcpre as usize] as u32;
+
+        self.hclk / presc
+    }
 }
 
 impl Default for Clocks {

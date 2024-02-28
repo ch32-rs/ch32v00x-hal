@@ -17,6 +17,7 @@ pub use self::peripherals::Peripherals;
 pub use ch32v0::ch32v003 as pac;
 use pac::__EXTERNAL_INTERRUPTS as _;
 
+pub mod adc;
 pub mod gpio;
 pub mod pwr;
 pub mod rcc;
