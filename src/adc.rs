@@ -316,7 +316,7 @@ impl<'a> Adc<'a, pac::ADC1> {
       does not. Therefore, ensure you do not do any no-op modifications
       to `ctlr2` just before calling this function
     */
-    fn convert(&mut self, chan: u8) -> u16 {
+    pub fn convert(&mut self, chan: u8) -> u16 {
         // Dummy read in case something accidentally triggered
         // a conversion by writing to CR2 without changing any
         // of the bits
