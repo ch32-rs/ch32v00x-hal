@@ -1,3 +1,4 @@
+use embedded_hal_02::adc::{Channel, OneShot};
 use crate::gpio::{self, Analog};
 use crate::pac;
 use crate::rcc::{self, Clocks, Enable, Reset};
@@ -87,19 +88,6 @@ impl From<Align> for bool {
             Align::Left => true,
         }
     }
-}
-
-pub trait Channel<ADC> {
-    /// Channel ID type
-    ///
-    /// A type used to identify this ADC channel. For example, if the ADC has eight channels, this
-    /// might be a `u8`. If the ADC has multiple banks of channels, it could be a tuple, like
-    /// `(u8: bank_id, u8: channel_id)`.
-    type ID;
-
-    /// Get the specific ID that identifies this channel, for example `0_u8` for the first ADC
-    /// channel, if Self::ID is u8.
-    fn channel() -> Self::ID;
 }
 
 macro_rules! adc_pins {
@@ -425,17 +413,6 @@ impl<'a> ChannelTimeSequence for Adc<'a, pac::ADC1> {
 	fn set_discontinuous_mode(&mut self, channels: Option<u8>) {
 		self.set_discontinuous_mode(channels);
 	}
-}
-
-pub trait OneShot<ADC, Word, Pin: Channel<ADC>> {
-    /// Error type returned by ADC methods
-    type Error;
-
-    /// Request that the ADC begin a conversion on the specified pin
-    ///
-    /// This method takes a `Pin` reference, as it is expected that the ADC will be able to sample
-    /// whatever channel underlies the pin.
-    fn read(&mut self, pin: &mut Pin) -> nb::Result<Word, Self::Error>;
 }
 
 impl<'a, WORD, PIN> OneShot<pac::ADC1, WORD, PIN> for Adc<'a, pac::ADC1>
