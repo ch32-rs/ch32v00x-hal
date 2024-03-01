@@ -466,6 +466,18 @@ impl BusClock for APB2 {
     }
 }
 
+impl BusTimerClock for APB1 {
+    fn timer_clock(clocks: &Clocks) -> Hertz {
+        clocks.hclk
+    }
+}
+
+impl BusTimerClock for APB2 {
+    fn timer_clock(clocks: &Clocks) -> Hertz {
+        clocks.hclk
+    }
+}
+
 /// Bus associated to peripheral
 pub trait RccBus: crate::Sealed {
     /// Bus type;

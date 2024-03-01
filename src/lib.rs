@@ -27,6 +27,7 @@ pub mod delay;
 pub mod i2c;
 pub mod serial;
 pub mod signature;
+pub mod time;
 pub mod timer;
 
 mod critical_section;
