@@ -255,11 +255,15 @@ impl SysTimerExt for SYSTICK {
 
 impl Timer<SYSTICK> {
     /// Initialize SysTick timer
-    pub fn syst(tim: SYSTICK, clocks: &Clocks) -> Self {
-        Self {
+    pub fn syst(mut tim: SYSTICK, clocks: &Clocks) -> Self {
+        tim.set_clock_source(SystickClkSource::HClk);
+        
+        let mut t = Self {
             tim,
             clk: clocks.hclk(),
-        }
+        };
+        t.configure(clocks);
+        t
     }
 
     pub fn configure(&mut self, clocks: &Clocks) {
