@@ -3,7 +3,7 @@ use crate::gpio::{self, Analog};
 use crate::pac;
 use crate::rcc::{self, Clocks, Enable, Reset};
 use qingke::riscv::asm::delay;
-use fugit::HertzU32;
+use fugit::{Hertz, HertzU32};
 
 /// Continuous mode
 pub struct Continuous;
@@ -11,11 +11,11 @@ pub struct Continuous;
 pub struct Scan;
 
 /// ADC configuration
-pub struct Adc<'a, ADC> {
+pub struct Adc<ADC> {
     rb: ADC,
     sample_time: SampleTime,
     align: Align,
-    clocks: &'a Clocks,
+    sysclk: Hertz<u32>,
 }
 
 /// ADC sampling time
@@ -117,17 +117,17 @@ adc_pins!(pac::ADC1,
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
 pub struct StoredConfig(SampleTime, Align);
 
-impl<'a> Adc<'a, pac::ADC1> {
+impl Adc<pac::ADC1> {
     /// Init a new Adc
     ///
     /// Sets all configurable parameters to one-shot defaults,
     /// performs a boot-time calibration.
-    pub fn new(adc: pac::ADC1, clocks: &'a Clocks) -> Self {
+    pub fn new(adc: pac::ADC1, clocks: &Clocks) -> Self {
         let mut s = Self {
             rb: adc,
             sample_time: SampleTime::default(),
             align: Align::default(),
-            clocks,
+            sysclk: clocks.sysclk(),
         };
         s.enable_clock();
         s.power_down();
@@ -138,9 +138,9 @@ impl<'a> Adc<'a, pac::ADC1> {
         // The manual states that we need to wait two ADC clocks cycles after power-up
         // before starting calibration, we already delayed in the power-up process, but
         // if the adc clock is too low that was not enough.
-        if s.clocks.adcclk() < HertzU32::kHz(2500) {
-            let two_adc_cycles = s.clocks.sysclk() / s.clocks.adcclk() * 2;
-            let already_delayed = s.clocks.sysclk() / HertzU32::kHz(800);
+        if clocks.adcclk() < HertzU32::kHz(2500) {
+            let two_adc_cycles = clocks.sysclk() / clocks.adcclk() * 2;
+            let already_delayed = clocks.sysclk() / HertzU32::kHz(800);
             if two_adc_cycles > already_delayed {
                 unsafe { delay(two_adc_cycles - already_delayed) };
             }
@@ -200,7 +200,7 @@ impl<'a> Adc<'a, pac::ADC1> {
         // this time can be found in the datasheets.
         // Here we are delaying for approximately 1us, considering 1.25 instructions per
         // cycle. Do we support a chip which needs more than 1us ?
-        unsafe { delay(self.clocks.sysclk() / HertzU32::kHz(800)) };
+        unsafe { delay(self.sysclk / HertzU32::kHz(800)) };
     }
 
     fn power_down(&mut self) {
@@ -343,7 +343,7 @@ impl<'a> Adc<'a, pac::ADC1> {
     }
 }
 
-impl<'a> Adc<'a, pac::ADC1> {
+impl Adc<pac::ADC1> {
     fn read_aux(&mut self, chan: u8) -> u16 {
 		/* ADC TSPD mask */
 		const CTLR2_TSVREFE_SET: u32   = 0x00800000;
@@ -355,7 +355,7 @@ impl<'a> Adc<'a, pac::ADC1> {
             // sensor, this time can be found in the datasheets.
             // Here we are delaying for approximately 10us, considering 1.25 instructions per
             // cycle. Do we support a chip which needs more than 10us ?
-            unsafe { delay(self.clocks.sysclk().raw() / 80_000) };
+            unsafe { delay(self.sysclk.raw() / 80_000) };
             true
         } else {
             false
@@ -396,7 +396,7 @@ pub trait ChannelTimeSequence {
     fn set_discontinuous_mode(&mut self, channels_count: Option<u8>);
 }
 
-impl<'a> ChannelTimeSequence for Adc<'a, pac::ADC1> {
+impl ChannelTimeSequence for Adc<pac::ADC1> {
 	#[inline(always)]
 	fn set_channel_sample_time(&mut self, chan: u8, sample_time: SampleTime) {
 		self.set_channel_sample_time(chan, sample_time);
@@ -415,7 +415,7 @@ impl<'a> ChannelTimeSequence for Adc<'a, pac::ADC1> {
 	}
 }
 
-impl<'a, WORD, PIN> OneShot<pac::ADC1, WORD, PIN> for Adc<'a, pac::ADC1>
+impl<WORD, PIN> OneShot<pac::ADC1, WORD, PIN> for Adc<pac::ADC1>
 where
     WORD: From<u16>,
     PIN: Channel<pac::ADC1, ID = u8>,
