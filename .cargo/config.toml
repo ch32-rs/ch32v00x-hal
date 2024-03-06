@@ -1,5 +1,6 @@
 [build]
-target = "riscv32ec-unknown-none-elf"
+# target = "riscv32ec-unknown-none-elf"
+target = "rv32ec.json"
 
 [target.'cfg(all(target_arch = "riscv32", target_os = "none"))']
 # runner = "riscv64-unknown-elf-gdb -q -x openocd.gdb"
@@ -10,9 +11,10 @@ target = "riscv32ec-unknown-none-elf"
 runner = "wlink -v flash --enable-sdi-print"
 
 [unstable]
-build-std = ["core", "compiler_builtins"]
+build-std = ["core"] # , "compiler_builtins"]
+build-std-features = ["compiler-builtins-mem"]
 
-[target.riscv32ec-unknown-none-elf]
+[target.rv32ec]
 rustflags = [
   "-C", "link-arg=-Tlink.x",
 ]
