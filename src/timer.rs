@@ -195,7 +195,8 @@ impl SysTimerExt for SYSTICK {
 
     #[inline]
     fn enable_counter(&mut self) {
-        self.ctlr.modify(|_, w| w.ste().set_bit())
+        self.ctlr.modify(|_, w| w.ste().set_bit());
+        self.ctlr.modify(|_, w| w.stre().set_bit());
     }
 
     #[inline]
@@ -258,11 +259,11 @@ impl Timer<SYSTICK> {
     pub fn syst(mut tim: SYSTICK, clocks: &Clocks) -> Self {
         tim.set_clock_source(SystickClkSource::HClk);
         
-        let mut t = Self {
+        let t = Self {
             tim,
             clk: clocks.hclk(),
         };
-        t.configure(clocks);
+
         t
     }
 

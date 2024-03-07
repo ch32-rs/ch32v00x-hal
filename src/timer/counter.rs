@@ -325,10 +325,6 @@ impl<const FREQ: u32> SysCounter<FREQ> {
     pub fn start(&mut self, timeout: TimerDurationU32<FREQ>) -> Result<(), Error> {
         let rvr = timeout.ticks() * (self.clk.raw() / FREQ) - 1;
 
-        if rvr >= (1 << 24) {
-            return Err(Error::WrongAutoReload);
-        }
-
         self.tim.set_reload(rvr);
         self.tim.clear_current();
         self.tim.enable_counter();
