@@ -29,6 +29,7 @@ pub mod serial;
 pub mod signature;
 pub mod time;
 pub mod timer;
+pub mod watchdog;
 
 mod critical_section;
 pub mod debug;
