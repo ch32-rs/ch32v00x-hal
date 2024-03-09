@@ -51,24 +51,24 @@ SECTIONS
         *(.trap.rust)
     } >FLASH AT>FLASH
 
-    .text :
+    .rodata : ALIGN(4)
     {
+        *(.srodata .srodata.*);
+        *(.rodata .rodata.*);
         . = ALIGN(4);
-        KEEP(*(SORT_NONE(.handle_reset)))
-        *(.init.rust)
-        *(.text .text.*)
     } >FLASH AT>FLASH
 
     .trap1kb  : ALIGN(1024)
     {
         *(.trap)
     } >FLASH AT>FLASH
-    
-    .rodata : ALIGN(4)
+
+    .text :
     {
-        *(.srodata .srodata.*);
-        *(.rodata .rodata.*);
         . = ALIGN(4);
+        KEEP(*(SORT_NONE(.handle_reset)))
+        *(.init.rust)
+        *(.text .text.*)
     } >FLASH AT>FLASH
 
     .data : ALIGN(4)
