@@ -1,5 +1,3 @@
-
-
 MEMORY
 {
 	FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 16K

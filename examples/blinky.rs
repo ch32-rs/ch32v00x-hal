@@ -5,7 +5,7 @@ use panic_halt as _;
 
 use ch32v00x_hal::prelude::*;
 
-#[ch32v_rt::entry]
+#[qingke_rt::entry]
 fn main() -> ! {
     // To ensure safe access to peripherals, all types are !Copy singletons. The
     // PAC makes us pass these marker types around to access the registers

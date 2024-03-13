@@ -4,10 +4,13 @@ use core::ops::Div;
 
 mod enable;
 
-use ch32v0::{ch32v003::rcc::cfgr0::CFGR0_SPEC, Readable, Reg, Writable};
+use ch32v0::{Readable, Reg, Writable};
 use fugit::{HertzU32 as Hertz, RateExtU32};
 
-use crate::pac::{rcc, RCC};
+use crate::pac::{
+    rcc::{self, cfgr0::CFGR0_SPEC},
+    RCC,
+};
 
 /// Typical output frequency of the HSI oscillator.
 const HSI_FREQUENCY: Hertz = Hertz::from_raw(24_000_000);

@@ -1,8 +1,9 @@
 //! Programmable Fast Interrupt Controller (PFIC)
 
-use ch32v0::ch32v003::AFIO;
-
-use crate::{pac::{rcc, PFIC}, rcc::Enable};
+use crate::{
+    pac::{rcc, AFIO, PFIC},
+    rcc::Enable,
+};
 
 pub trait PficExt {
     fn constrain(self) -> Pfic;
@@ -10,9 +11,7 @@ pub trait PficExt {
 
 impl PficExt for PFIC {
     fn constrain(self) -> Pfic {
-        Pfic {
-            pfic: self,
-        }
+        Pfic { pfic: self }
     }
 }
 
