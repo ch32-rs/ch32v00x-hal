@@ -31,7 +31,7 @@ default-features = false
 features = ["macros"]
 
 [features]
-default = ["ch32v003"]
+default = ["ch32v003", "rt"]
 device-selected = []
 rt = ["ch32v0/rt"]
 
