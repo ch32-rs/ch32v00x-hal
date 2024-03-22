@@ -1,3 +1,0 @@
-[toolchain]
-channel = "nightly"
-target = "riscv32ec-unknown-none-elf.json"
