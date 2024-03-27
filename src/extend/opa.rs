@@ -1,18 +1,20 @@
 //! In-built operation amplifier control.
+//!
+//! The OPA peripheral does not have programmable gain - it relies on external feedback resistors/connections.
 
 use crate::{
-    gpio::{Floating, Input, PA1, PA2, PD0, PD4, PD7},
+    gpio::{Analog, Input, PA1, PA2, PD0, PD4, PD7},
     pac, Sealed,
 };
 
 /// In-built operational amplifier control.
-pub struct Opa<P: OpaP, N: OpaN> {
+pub struct Opa<MODE, P: OpaP, N: OpaN> {
     opa_p: P,
     opa_n: N,
-    opa_o: PD4<Input<Floating>>,
+    opa_o: PD4<MODE>,
 }
 
-impl<P: OpaP, N: OpaN> Opa<P, N> {
+impl<MODE: ValidMode, P: OpaP, N: OpaN> Opa<MODE, P, N> {
     /// Enable the OPA, taking hold of the pins the OPA is using until disabled.
     ///
     /// Pins that can be passed for non-inverting input - `opa_p`:
@@ -24,7 +26,7 @@ impl<P: OpaP, N: OpaN> Opa<P, N> {
     /// * `PD0`
     ///
     /// The output of the amplifier is always `PD4`.
-    pub fn enable(opa_p: P, opa_n: N, opa_o: PD4<Input<Floating>>) -> Self {
+    pub fn enable(opa_p: P, opa_n: N, opa_o: PD4<MODE>) -> Self {
         unsafe {
             (*pac::EXTEND::ptr()).extend_ctr.modify(|_, w| {
                 w.opa_en()
@@ -45,7 +47,7 @@ impl<P: OpaP, N: OpaN> Opa<P, N> {
     }
 
     /// Turn off the OPA peripheral, returning the pins it was using.
-    pub fn disable(self) -> (P, N, PD4) {
+    pub fn disable(self) -> (P, N, PD4<MODE>) {
         unsafe {
             // Clearing all bits back to reset value of 0.
             (*pac::EXTEND::ptr()).extend_ctr.modify(|_, w| {
@@ -68,11 +70,11 @@ pub trait OpaP: Sealed {
     const OPA_NSEL: bool;
 }
 /// `OPP0` - `PA2`
-impl OpaP for PA2<Input<Floating>> {
+impl<MODE: ValidMode> OpaP for PA2<MODE> {
     const OPA_NSEL: bool = false;
 }
 /// `OPP1` - `PD7`
-impl OpaP for PD7<Input<Floating>> {
+impl<MODE: ValidMode> OpaP for PD7<MODE> {
     const OPA_NSEL: bool = true;
 }
 
@@ -82,15 +84,26 @@ pub trait OpaN: Sealed {
     const OPA_PSEL: bool;
 }
 /// `OPN0` - `PA1`
-impl OpaN for PA1<Input<Floating>> {
+impl<MODE: ValidMode> OpaN for PA1<MODE> {
     const OPA_PSEL: bool = false;
 }
 /// `OPN1` - `PD0`
-impl OpaN for PD0<Input<Floating>> {
+impl<MODE: ValidMode> OpaN for PD0<MODE> {
     const OPA_PSEL: bool = true;
 }
 
-impl Sealed for PD0<Input<Floating>> {}
-impl Sealed for PA1<Input<Floating>> {}
-impl Sealed for PD7<Input<Floating>> {}
-impl Sealed for PA2<Input<Floating>> {}
+impl<T> Sealed for PD0<T> {}
+impl<T> Sealed for PA1<T> {}
+impl<T> Sealed for PD7<T> {}
+impl<T> Sealed for PA2<T> {}
+
+/// Pin modes implementing this are pin modes which are suitable to use with OPA.
+pub trait ValidMode {}
+
+/// It seems reasonable that a GPIO which is also being measured
+/// by the ADC can be used with OPA. (Untested.)
+impl ValidMode for Analog {}
+
+/// It seems reasonable that a GPIO which is an input, even if
+/// it has a pull-resistor enabled, can still be used with OPA. (Untested.)
+impl<MODE> ValidMode for Input<MODE> {}
