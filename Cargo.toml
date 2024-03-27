@@ -23,7 +23,8 @@ fugit-timer = "0.1.3"
 embedded-hal-02 = { version = "0.2.7", package = "embedded-hal", features = [
     "unproven",
 ] }
-embedded-hal-1 = { version = "=1.0.0-rc.1", package = "embedded-hal" }
+embedded-hal-1 = { version = "=1.0.0", package = "embedded-hal" }
+bitflags = "2.4.2"
 
 [dev-dependencies.time]
 version = "0.3"
@@ -66,4 +67,8 @@ required-features = ["ch32v003", "rt"]
 
 [[example]]
 name = "serial"
+required-features = ["ch32v003", "rt"]
+
+[[example]]
+name = "adc"
 required-features = ["ch32v003", "rt"]

@@ -17,6 +17,7 @@ pub use self::peripherals::Peripherals;
 pub use ch32v0::ch32v003 as pac;
 use pac::__EXTERNAL_INTERRUPTS as _;
 
+pub mod adc;
 pub mod gpio;
 pub mod pwr;
 pub mod rcc;
@@ -26,7 +27,9 @@ pub mod delay;
 pub mod i2c;
 pub mod serial;
 pub mod signature;
+pub mod time;
 pub mod timer;
+pub mod watchdog;
 
 mod critical_section;
 pub mod debug;
