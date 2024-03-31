@@ -1,4 +1,6 @@
 //! This example enables the in-built operational amplifier of the CH32V003.
+//!
+//! The OPA peripheral does not have programmable gain - it relies on external feedback resistors/connections.
 #![no_std]
 #![no_main]
 
@@ -18,22 +20,22 @@ fn main() -> ! {
     let gpiod = p.GPIOD.split(&mut rcc);
 
     // Op-amp non-inverting input.
-    let opa_p = gpioa.pa2;
+    let non_inverting_pin = gpioa.pa2;
     // PD7 is configured as NRST by default.
-    // let opa_p = gpiod.pd7;
+    // let non_inverting_pin = gpiod.pd7;
 
     // Op-amp inverting input.
-    let opa_n = gpioa.pa1;
-    // let opa_n = gpiod.pd0;
+    let inverting_pin = gpioa.pa1;
+    // let inverting_pin = gpiod.pd0;
 
     // Op-amp output.
-    let opa_o = gpiod.pd4;
+    let output_pin = gpiod.pd4;
 
     #[allow(unused)]
-    let opa = hal::extend::opa::Opa::enable(opa_p, opa_n, opa_o);
+    let opa = hal::extend::opa::OpAmp::enable(non_inverting_pin, inverting_pin, output_pin);
 
     // Pins are available for other uses after disabling opa.
-    // let (opa_p, opa_n, opa_o) = opa.disable();
+    // let (non_inverting_pin, inverting_pin, output_pin) = opa.disable();
 
     loop {}
 }
