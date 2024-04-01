@@ -25,6 +25,7 @@ pub mod rcc;
 //
 // pub mod pfic;
 pub mod delay;
+pub mod extend;
 pub mod i2c;
 pub mod serial;
 pub mod signature;

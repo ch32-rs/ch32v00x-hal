@@ -67,3 +67,7 @@ required-features = ["ch32v003", "rt"]
 [[example]]
 name = "serial"
 required-features = ["ch32v003", "rt"]
+
+[[example]]
+name = "op_amp"
+required-features = ["ch32v003", "rt"]
