@@ -26,6 +26,16 @@ impl embedded_hal_1::delay::DelayNs for CycleDelay {
             qingke::riscv::asm::delay(cycles as u32);
         }
     }
+
+    fn delay_us(&mut self, us: u32) {
+        // Widen to u64 to ensure no overflow
+        // The QingKe RISC-V2A executes an addi in 2 cycles
+        let cycles = us as u64 * self.rate.to_Hz() as u64 / 2_000_000;
+
+        unsafe {
+            qingke::riscv::asm::delay(cycles as u32);
+        }
+    }
 }
 
 impl embedded_hal_02::blocking::delay::DelayUs<u32> for CycleDelay {
