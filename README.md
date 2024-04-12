@@ -31,6 +31,6 @@ This is a WIP implementation of the embedded-hal traits for the CH32V0 family of
 
 ## Guide on Rust with riscv32ec
 
-As of 2023-02-28, The RVE with +c extension for LLVM is merged and shipped with Rust nightly.
-Plese refer to `.cargo/config.toml` for the target override, and `rv32ec.json` for the target specification.
+As of 2024-02-28, The RVE with +c extension for LLVM is merged and shipped with Rust nightly.
+Plese refer to `.cargo/config.toml` for the target override, and `riscv32ec-unknown-none-elf.json` for the target specification.
 Remember to use the latest nightly toolchain.
