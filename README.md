@@ -12,15 +12,15 @@ This is a WIP implementation of the embedded-hal traits for the CH32V0 family of
 
 - [ ] PWR: Power control
 - [x] RCC: Reset and Clock Control
-- [ ] IWDG: Independent Watchdog
+- [x] IWDG: Independent Watchdog
 - [ ] WWDG: Window Watchdog
 - [ ] FPIC: Programmable Fast Interrupt Controller
 - [x] GPIO: General Purpose Input/Output
 - [ ] AFIO: Alternate Function Input/Output
 - [ ] DMA: Direct Memory Access control
-- [ ] ADC: Analog to Digital Converter
-- [ ] ADTM: Advanced control Timer (TIM1)
-- [ ] GPTM: General Purpose Timer (TIM2)
+- [x] ADC: Analog to Digital Converter
+- [x] ADTM: Advanced control Timer (TIM1)
+- [x] GPTM: General Purpose Timer (TIM2)
 - [x] USART: Universal Synchronous Asynchronous Receiver Transmitter
 - [x] I2C: Inter-intergrated Circuit interface
 - [ ] SPI: Serial Peripheral Interface

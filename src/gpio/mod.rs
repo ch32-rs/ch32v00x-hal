@@ -7,6 +7,7 @@ pub use embedded_hal_02::digital::v2::PinState;
 
 mod convert;
 mod hal_02;
+mod hal_1;
 mod partially_erased;
 pub use partially_erased::{PEPin, PartiallyErasedPin};
 

@@ -1,86 +1,141 @@
 //! Delays
-use crate::pac::SYSTICK;
-use crate::rcc::Clocks;
 
-/// A delay using the systick timer
-///
-/// Timing mostly doesn't vary from interrupts
-pub struct SysDelay {
-    systick: SYSTICK,
-    scale: u32,
+use super::{FTimer, Instance, Timer};
+use core::ops::{Deref, DerefMut};
+use crate::pac::SYSTICK;
+use crate::timer::SysTimerExt;
+use fugit::{MicrosDurationU32, TimerDurationU32};
+
+/// Timer as a delay provider (SYSTICKick by default)
+pub struct SysDelay(Timer<SYSTICK>);
+
+impl Deref for SysDelay {
+    type Target = Timer<SYSTICK>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for SysDelay {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
 }
 
 impl SysDelay {
-    pub fn new(systick: SYSTICK, clocks: &Clocks) -> Self {
-        systick.ctlr.write(|w| w.stclk().set_bit().ste().set_bit());
-        let scale = clocks.hclk().to_MHz() as u32;
-        SysDelay {
-            systick,
-            scale
-        }
+    /// Releases the timer resource
+    pub fn release(self) -> Timer<SYSTICK> {
+        self.0
     }
 }
 
-impl embedded_hal_alpha::delay::DelayUs for SysDelay {
-    fn delay_us(&mut self, mut us: u32) {
-        // Wait at most for half the potential length (to avoid issues when interrupts occur and the timer continues)
-        // To avoid having to calculate and/or store the maximum depending on the scale, just pick the worst case.
-        // This is around 45 seconds, so this shouldn't be an issue
-        const MAX_US: u32 = 8000_0000u32 / 48;
-        // Scale the us inside the loop, to avoid overflow scenarios
-        while us != 0 {
-            let current_us = us.min(MAX_US);
-            let current_rvr = current_us * self.scale;
+impl Timer<SYSTICK> {
+    pub fn delay(self) -> SysDelay {
+        SysDelay(self)
+    }
+}
 
-            let start_rvr = self.systick.cnt.read().cnt().bits();
+impl SysDelay {
+    pub fn delay(&mut self, us: MicrosDurationU32) {
+        // The SYSTICKick Reload Value register supports values between 1 and 0x00FFFFFF.
+        const MAX_RVR: u32 = 0x00FF_FFFF;
+
+        let mut total_rvr = us.ticks() * (self.clk.raw() / 1_000_000);
+
+        while total_rvr != 0 {
+            let current_rvr = total_rvr.min(MAX_RVR);
+
+            self.tim.set_reload(current_rvr);
+            self.tim.clear_current();
+            self.tim.enable_counter();
+
             // Update the tracking variable while we are waiting...
-            us -= current_us;
-            // Use the wrapping substraction to deal with the systick wrapping around
-            while (self.systick.cnt.read().cnt().bits().wrapping_sub(start_rvr)) < current_rvr {}
+            total_rvr -= current_rvr;
+
+            while !self.tim.has_wrapped() {}
+
+            self.tim.disable_counter();
         }
     }
 }
 
-impl embedded_hal::blocking::delay::DelayUs<u32> for SysDelay {
-    fn delay_us(&mut self, us: u32) {
-        embedded_hal_alpha::delay::DelayUs::delay_us(self, us as _);
+/// Periodic non-blocking timer that imlements [embedded_hal::blocking::delay] traits
+pub struct Delay<TIM, const FREQ: u32>(pub(super) FTimer<TIM, FREQ>);
+
+impl<T, const FREQ: u32> Deref for Delay<T, FREQ> {
+    type Target = FTimer<T, FREQ>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
-impl embedded_hal::blocking::delay::DelayUs<u16> for SysDelay {
-    fn delay_us(&mut self, us: u16) {
-        embedded_hal_alpha::delay::DelayUs::delay_us(self, us as _);
+impl<T, const FREQ: u32> DerefMut for Delay<T, FREQ> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
-impl embedded_hal::blocking::delay::DelayUs<u8> for SysDelay {
-    fn delay_us(&mut self, us: u8) {
-        embedded_hal_alpha::delay::DelayUs::delay_us(self, us as _);
-    }
-}
+/// `Delay` with precision of 1 μs (1 MHz sampling)
+pub type DelayUs<TIM> = Delay<TIM, 1_000_000>;
 
-impl embedded_hal::blocking::delay::DelayMs<u32> for SysDelay {
-    // Multiplying ms so we can call delay_us directly might overflow, so implement an outer loop
-    fn delay_ms(&mut self, mut ms: u32) {
-        const MAX_MS: u32 = 0x0010_0000;
-        while ms != 0 {
-            let current_ms = if ms <= MAX_MS { ms } else { MAX_MS };
-            embedded_hal::blocking::delay::DelayUs::delay_us(self, current_ms as u32 * 1_000);
-            ms -= current_ms;
+/// `Delay` with precision of 1 ms (1 kHz sampling)
+///
+/// NOTE: don't use this if your SYSTICKem frequency more than 65 MHz
+pub type DelayMs<TIM> = Delay<TIM, 1_000>;
+
+impl<TIM: Instance, const FREQ: u32> Delay<TIM, FREQ> {
+    /// Sleep for given time
+    pub fn delay(&mut self, time: TimerDurationU32<FREQ>) {
+        let mut ticks = time.ticks().max(1) - 1;
+        while ticks != 0 {
+            let reload = ticks.min(TIM::max_auto_reload());
+
+            // Write Auto-Reload Register (ARR)
+            unsafe {
+                self.tim.set_auto_reload_unchecked(reload);
+            }
+
+            // Trigger update event (UEV) in the event generation register (EGR)
+            // in order to immediately apply the config
+            self.tim.trigger_update();
+
+            // Configure the counter in one-pulse mode (counter stops counting at
+            // the next updateevent, clearing the CEN bit) and enable the counter.
+            self.tim.start_one_pulse();
+
+            // Update the tracking variable while we are waiting...
+            ticks -= reload;
+            // Wait for CEN bit to clear
+            while self.tim.is_counter_enabled() { /* wait */ }
         }
     }
-}
 
-impl embedded_hal::blocking::delay::DelayMs<u16> for SysDelay {
-    fn delay_ms(&mut self, ms: u16) {
-        // Call delay_us directly, so we don't have to use the additional
-        // delay loop the u32 variant uses
-        embedded_hal::blocking::delay::DelayUs::delay_us(self, ms as u32 * 1_000);
+    pub fn max_delay(&self) -> TimerDurationU32<FREQ> {
+        TimerDurationU32::from_ticks(TIM::max_auto_reload())
+    }
+
+    /// Releases the TIM peripheral
+    pub fn release(mut self) -> FTimer<TIM, FREQ> {
+        // stop counter
+        self.tim.cr1_reset();
+        self.0
     }
 }
 
-impl embedded_hal::blocking::delay::DelayMs<u8> for SysDelay {
-    fn delay_ms(&mut self, ms: u8) {
-        self.delay_ms(ms as u16);
+impl<TIM: Instance, const FREQ: u32> fugit_timer::Delay<FREQ> for Delay<TIM, FREQ> {
+    type Error = core::convert::Infallible;
+
+    fn delay(&mut self, duration: TimerDurationU32<FREQ>) -> Result<(), Self::Error> {
+        self.delay(duration);
+        Ok(())
+    }
+}
+
+impl fugit_timer::Delay<1_000_000> for SysDelay {
+    type Error = core::convert::Infallible;
+
+    fn delay(&mut self, duration: MicrosDurationU32) -> Result<(), Self::Error> {
+        self.delay(duration);
+        Ok(())
     }
 }

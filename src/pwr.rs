@@ -18,14 +18,14 @@ pub enum PVDVoltageThreshold {
 
 pub struct Pwr {
     pwr: PWR,
-    clocks: Clocks,
+    _clocks: Clocks,
 }
 
 impl Pwr {
-    pub fn pwr(pwr: PWR, rcc: &mut Rcc, clocks: Clocks) -> Self {
+    pub fn pwr(pwr: PWR, rcc: &mut Rcc, _clocks: Clocks) -> Self {
         PWR::enable(&mut rcc.apb1);
 
-        Self { pwr, clocks }
+        Self { pwr, _clocks }
     }
 
     /// set threshold voltage for pvd
