@@ -1,3 +1,5 @@
+# ⚠️ This project has been superseded by [ch32-hal](https://github.com/ch32-rs/ch32-hal) ⚠️
+
 # ch32v00x-hal
 
 This is a WIP implementation of the embedded-hal traits for the CH32V0 family of microcontrollers.
